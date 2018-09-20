@@ -10,6 +10,9 @@ void ExplicitScheme::solve(int t) {
     this->setInitialValues();
     for (int i = 0; i < t; i++) {
         step();
+        double* temp = this->prev;
+        this->prev = this->u;
+        this->u = temp;
     }
 }
 

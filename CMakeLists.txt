@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.12.1)
+cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_NAME calc)
-set(PROJECT_BINARY_DIR bin)
+project(calc
+        VERSION 0.1.0
+        LANGUAGES CXX)
+set(PROJECT_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_HOME_DIRECTORY}/bin)
 
-set(SOURCES src/base/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/main.cpp src/schemes/LaxWendroffScheme.cpp)
-
+set(SOURCES src/base/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/main.cpp)
 add_executable(main ${SOURCES})
