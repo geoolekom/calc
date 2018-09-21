@@ -8,7 +8,7 @@
 
 void ExplicitScheme::solve(int t) {
     this->setInitialValues();
-    for (int i = 0; i < t; i++) {
+    for (long int i = 0; i < t; i++) {
         step();
         double* temp = this->prev;
         this->prev = this->u;
@@ -16,9 +16,7 @@ void ExplicitScheme::solve(int t) {
     }
 }
 
-ExplicitScheme::ExplicitScheme(int size, int c) {
-    this->size = size;
-    this->c = c;
+ExplicitScheme::ExplicitScheme(int size, int c, double timeStep) : timeStep(timeStep), c(c), size(size) {
     this->prev = new double[size];
     this->u = new double[size];
 }
@@ -28,7 +26,7 @@ ExplicitScheme::~ExplicitScheme() {
     delete[] this->u;
 }
 
-void ExplicitScheme::toFile(char *filename) {
+void ExplicitScheme::toFile(const char *filename) {
     std::ofstream file;
     file.open(filename);
     for (int i = 0; i < this->size; i++) {

@@ -8,20 +8,21 @@
 
 class ExplicitScheme {
 public:
-    explicit ExplicitScheme(int size, int c);
+    explicit ExplicitScheme(int size, int c, double timeStep = 0.001);
     ~ExplicitScheme();
 
     void solve(int);
 
     void setInitialValues();
 
-    void toFile(char* filename);
+    void toFile(const char*);
 
     virtual void step() = 0;
 
 protected:
     double *u, *prev;
     int size, c;
+    double timeStep;
 };
 
 
