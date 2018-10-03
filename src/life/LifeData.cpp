@@ -36,24 +36,31 @@ void LifeData::step() {
     int i, j;
     for (j = 0; j < this->ny; j++) {
         for (i = 0; i < this->nx; i++) {
-            int n = 0;
-            n += this->prev[this->index(i+1, j)];
-            n += this->prev[this->index(i+1, j+1)];
-            n += this->prev[this->index(i,   j+1)];
-            n += this->prev[this->index(i-1, j)];
-            n += this->prev[this->index(i-1, j-1)];
-            n += this->prev[this->index(i,   j-1)];
-            n += this->prev[this->index(i-1, j+1)];
-            n += this->prev[this->index(i+1, j-1)];
+            int n = cellStatus(i, j);
             this->u[this->index(i, j)] = 0;
-            if (n == 3 && this->prev[this->index(i,j)] == 0) {
-                this->u[this->index(i,j)] = 1;
+            if (n == 3 && this->prev[this->index(i, j)] == 0) {
+                this->u[this->index(i, j)] = 1;
             }
-            if ((n == 3 || n == 2) && this->prev[this->index(i,j)] == 1) {
-                this->u[this->index(i,j)] = 1;
+            if ((n == 3 || n == 2) && this->prev[this->index(i, j)] == 1) {
+                this->u[this->index(i, j)] = 1;
             }
         }
     }
+}
+
+int LifeData::cellStatus(int i, int j) {
+    int n = 0;
+    n += this->prev[this->index(i - 1, j - 1)];
+    n += this->prev[this->index(i, j - 1)];
+    n += this->prev[this->index(i + 1, j - 1)];
+
+    n += this->prev[this->index(i - 1, j)];
+    n += this->prev[this->index(i + 1, j)];
+
+    n += this->prev[this->index(i - 1, j + 1)];
+    n += this->prev[this->index(i, j + 1)];
+    n += this->prev[this->index(i + 1, j + 1)];
+    return n;
 }
 
 void LifeData::toFile(const char *path) {

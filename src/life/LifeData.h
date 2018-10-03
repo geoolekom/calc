@@ -11,11 +11,14 @@ protected:
     int nx, ny;
     int *u, *prev;
     int stepCount, saveStep;
-    int index(int i, int j);
+
+    virtual int index(int i, int j);
     virtual void step();
+    virtual int cellStatus(int i, int j);
 public:
+    explicit LifeData() {};
     explicit LifeData(const char* path);
-    ~LifeData();
+    virtual ~LifeData();
     void toFile(const char* path);
     void evolve();
 

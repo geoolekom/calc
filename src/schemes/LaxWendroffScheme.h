@@ -6,7 +6,7 @@
 #define PROJECT_LAXWENDROFFSCHEME_H
 
 
-#include "../base/ExplicitScheme.h"
+#include "ExplicitScheme.h"
 
 class LaxWendroffScheme : public ExplicitScheme {
 public:

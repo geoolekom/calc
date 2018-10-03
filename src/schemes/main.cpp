@@ -1,9 +1,9 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "base/ExplicitScheme.h"
-#include "schemes/SimpleScheme.h"
-#include "schemes/LaxWendroffScheme.h"
+#include "ExplicitScheme.h"
+#include "SimpleScheme.h"
+#include "LaxWendroffScheme.h"
 
 
 int castToInt(char* str) {

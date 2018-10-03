@@ -2,7 +2,7 @@
 // Created by geoolekom on 21.09.18.
 //
 
-#include "../base/ExplicitScheme.h"
+#include "ExplicitScheme.h"
 
 #ifndef PROJECT_SIMPLESCHEME_H
 #define PROJECT_SIMPLESCHEME_H

@@ -10,10 +10,16 @@
 
 class DistributedLifeData : public LifeData {
 private:
-    int rank, size;
+    int size, rank;
+    int* dataLeft;
+    int* dataRight;
+protected:
+    int index(int i, int j) override;
+    void step() override;
+    int cellStatus(int i, int j) override;
+    int calculateStatus(int n, int oldStatus);
 public:
-    DistributedLifeData(const char* path);
-    void step();
+    DistributedLifeData(const char* path, int size, int rank);
 };
 
 
