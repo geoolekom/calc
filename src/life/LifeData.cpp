@@ -50,20 +50,20 @@ void LifeData::step() {
 
 int LifeData::cellStatus(int i, int j) {
     int n = 0;
-    n += this->prev[this->index(i - 1, j - 1)];
-    n += this->prev[this->index(i, j - 1)];
-    n += this->prev[this->index(i + 1, j - 1)];
+    n += prev[this->index(i - 1, j - 1)];
+    n += prev[this->index(i, j - 1)];
+    n += prev[this->index(i + 1, j - 1)];
 
-    n += this->prev[this->index(i - 1, j)];
-    n += this->prev[this->index(i + 1, j)];
+    n += prev[this->index(i - 1, j)];
+    n += prev[this->index(i + 1, j)];
 
-    n += this->prev[this->index(i - 1, j + 1)];
-    n += this->prev[this->index(i, j + 1)];
-    n += this->prev[this->index(i + 1, j + 1)];
+    n += prev[this->index(i - 1, j + 1)];
+    n += prev[this->index(i, j + 1)];
+    n += prev[this->index(i + 1, j + 1)];
     return n;
 }
 
-void LifeData::toFile(const char *path) {
+void LifeData::toFile(const char* path) {
     std::ofstream file;
     file.open(path);
 

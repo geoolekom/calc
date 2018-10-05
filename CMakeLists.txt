@@ -5,8 +5,11 @@ project(calc
         LANGUAGES CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
 
-set(SOURCES src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
-add_executable(main ${SOURCES})
+set(SCHEMES_SRC src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
+add_executable(schemes ${SCHEMES_SRC})
 
 set(LIFE_SRC src/life/main.cpp  src/life/LifeData.cpp src/life/DistributedLifeData.cpp src/life/DistributedLifeData.h)
 add_executable(life ${LIFE_SRC})
+
+set(CLIFE_SRC src/clife/main.cpp src/clife/Data.cpp src/clife/Worker.cpp src/clife/Master.cpp)
+add_executable(clife ${CLIFE_SRC})

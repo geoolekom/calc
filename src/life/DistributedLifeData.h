@@ -6,20 +6,25 @@
 #define CALC_DISTRIBUTEDLIFEDATA_H
 
 
-#include "LifeData.h"
-
-class DistributedLifeData : public LifeData {
+class DistributedLifeData {
 private:
     int size, rank;
     int* dataLeft;
     int* dataRight;
+
+    int nx, ny;
+    int *u, *prev;
+    int stepCount, saveStep;
 protected:
-    int index(int i, int j) override;
-    void step() override;
-    int cellStatus(int i, int j) override;
+    int index(int i, int j);
+    void step(int stepNumber);
+    int cellStatus(int i, int j);
     int calculateStatus(int n, int oldStatus);
 public:
     DistributedLifeData(const char* path, int size, int rank);
+    ~DistributedLifeData();
+    void toFile(const char* path);
+    void evolve();
 };
 
 

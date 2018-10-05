@@ -7,7 +7,7 @@
 
 
 class LifeData {
-protected:
+private:
     int nx, ny;
     int *u, *prev;
     int stepCount, saveStep;
@@ -19,7 +19,7 @@ public:
     explicit LifeData() {};
     explicit LifeData(const char* path);
     virtual ~LifeData();
-    void toFile(const char* path);
+    virtual void toFile(const char* path);
     void evolve();
 
 };

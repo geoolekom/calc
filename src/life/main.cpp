@@ -7,8 +7,7 @@
 #include "LifeData.h"
 #include "DistributedLifeData.h"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     if (argc != 2) {
         std::cout << "No input file detected.\n";
@@ -19,7 +18,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     double startTime = MPI_Wtime();
 
-    DistributedLifeData* l = new DistributedLifeData(argv[1], size, rank);
+    LifeData* l = new LifeData(argv[1]);
     l->evolve();
     double endTime = MPI_Wtime();
     std::cout << (endTime - startTime) * 1000 << " ms." << std::endl;
