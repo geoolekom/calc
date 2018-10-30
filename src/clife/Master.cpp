@@ -24,8 +24,11 @@ Data* Master::getData() {
 };
 
 void Master::wait(int tag) {
-    int nx = data->getNx(), ny = data->getNy(), count = ny * nx / size;
-    for (int i = 0; i < size; i++) {
+    int nx = data->getNx(), ny = data->getNy();
+    int count = ny * nx / size;
+    int countFirst = (ny / size + ny % size) * nx;
+    MPI_Irecv(data->getData(), countFirst, MPI_INT, 0, tag, MPI_COMM_WORLD, requests);
+    for (int i = 1; i < size; i++) {
         MPI_Irecv(data->getData() + i * count, count, MPI_INT, i, tag, MPI_COMM_WORLD, requests + i);
     }
     MPI_Waitall(size, requests, statuses);

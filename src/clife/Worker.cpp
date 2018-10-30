@@ -12,7 +12,11 @@ Worker::Worker() {
 
 Worker::Worker(int rank, int size, Data *initialData) : rank(rank), size(size) {
     int nx = initialData->getNx(), ny = initialData->getNy();
-    prev = new Data(nx, ny / size, initialData->getData() + nx * ny * rank / size);
+    int newNy = ny / size;
+    if (ny % size != 0 && rank == 0) {
+        newNy += ny % size;
+    }
+    prev = new Data(nx, newNy, initialData->getData() + nx * ny * rank / size);
     curr = new Data(*prev);
     bufferLeft = new int[nx]();
     bufferRight = new int[nx]();

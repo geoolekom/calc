@@ -4,6 +4,7 @@ project(calc
         VERSION 0.1.0
         LANGUAGES CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
+set(CMAKE_CXX_FLAGS "-std=c++11")
 
 set(SCHEMES_SRC src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
 add_executable(schemes ${SCHEMES_SRC})
@@ -13,3 +14,6 @@ add_executable(life ${LIFE_SRC})
 
 set(CLIFE_SRC src/clife/main.cpp src/clife/Data.cpp src/clife/Worker.cpp src/clife/Master.cpp)
 add_executable(clife ${CLIFE_SRC})
+
+set(THERMOS_SRC src/thermos/main.cpp src/thermos/Data.cpp src/thermos/Data.h)
+add_executable(thermos ${THERMOS_SRC})
