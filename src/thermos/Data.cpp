@@ -8,9 +8,10 @@
 #include <fstream>
 #include "Data.h"
 
-Data::Data(int rank, int size, int nx, double xRange, double highT, double lowT, double eps, int nvStart, int nvEnd)
-: rank(rank), size(size), nx(nx), highT(highT), lowT(lowT), xStep(xRange / nx), eps(eps), nvStart(nvStart), nvEnd(nvEnd) {
+Data::Data(int rank, int size, int nx, int nvFull, double highT, double lowT, double eps, int nvStart, int nvEnd)
+: rank(rank), size(size), nx(nx), highT(highT), lowT(lowT), xStep(1.0 / nx), eps(eps), nvStart(nvStart), nvEnd(nvEnd), diffStep(10) {
     nv = nvEnd - nvStart;
+    vStep = 9.6 / nvFull;
     curr = new double[nx * nv];
     next = new double[nx * nv];
 
@@ -36,9 +37,9 @@ int Data::index(int xIndex, int vIndex) {
 
 double Data::getValue(int xIndex, int vIndex) {
     if (xIndex == 0) {
-        return exp(- 0.5 * highT / lowT * vIndex * vIndex);
+        return exp(- 0.5 * highT / lowT * vIndex * vIndex * vStep * vStep);
     } else if (xIndex + 1 == nx) {
-        return exp(- 0.5 * vIndex * vIndex);
+        return exp(- 0.5 * vIndex * vIndex * vStep * vStep);
     } else {
         return curr[index(xIndex, vIndex)];
     }
@@ -52,7 +53,7 @@ double Data::deltaFunc(int xIndex, int vIndex) {
 }
 
 double Data::calcFunc(int xIndex, int vIndex) {
-    double gamma = fabs(vIndex / 5.0);
+    double gamma = fabs(vIndex * vStep / 5.0);
     if (xIndex == 0) {
         return curr[index(xIndex, vIndex)];
     } else if (xIndex + 1 == nx) {
@@ -81,9 +82,9 @@ void Data::solve() {
         curr = next;
         next = temp;
 
-        if (i % 100 == 0) {
+        if (i % diffStep == 0) {
             calcTemperature(i);
-        } else if (i % 100 == 1) {
+        } else if (i % diffStep == 1) {
             temp = temperature;
             temperature = prevTemperature;
             prevTemperature = temp;
@@ -113,9 +114,9 @@ bool Data::breakCondition() {
 void Data::setInitialValues() {
     for (int vIndex = nvStart; vIndex < nvEnd; vIndex ++) {
         for (int xIndex = 0; xIndex < nx - 1; xIndex ++) {
-            curr[index(xIndex, vIndex)] = exp(- 0.5 * highT / lowT * vIndex * vIndex);
+            curr[index(xIndex, vIndex)] = exp(- 0.5 * highT / lowT * vIndex * vIndex * vStep * vStep);
         }
-        curr[index(nx - 1, vIndex)] = exp(- 0.5 * vIndex * vIndex);
+        curr[index(nx - 1, vIndex)] = exp(- 0.5 * vIndex * vIndex * vStep * vStep);
     }
 }
 
@@ -125,7 +126,7 @@ void Data::calcTemperature(int stepNumber) {
 
     for (int vIndex = nvStart; vIndex < nvEnd; vIndex ++) {
         for (int xIndex = 0; xIndex < nx; xIndex ++) {
-            nom[xIndex] += vIndex * vIndex * curr[index(xIndex, vIndex)];
+            nom[xIndex] += vIndex * vIndex * vStep * vStep * curr[index(xIndex, vIndex)];
             denom[xIndex] += curr[index(xIndex, vIndex)];
         }
     }

@@ -9,8 +9,8 @@
 class Data {
 private:
     int rank, size;
-    double xStep;
-    int nx, nv, nvStart, nvEnd;
+    double xStep, vStep;
+    int nx, nv, nvStart, nvEnd, diffStep;
     double *curr, *next;
     double eps;
     double lowT, highT;
@@ -18,7 +18,7 @@ private:
     double *bufferNom, *bufferDenom;
 public:
     Data();
-    Data(int rank, int size, int nx, double xRange, double highT, double lowT, double eps, int nvStart, int nvEnd);
+    Data(int rank, int size, int nx, int nvFull, double highT, double lowT, double eps, int nvStart, int nvEnd);
     ~Data();
     int index(int xIndex, int vIndex);
     double getValue(int xIndex, int vIndex);

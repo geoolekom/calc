@@ -17,14 +17,14 @@ void toFile(const double* data, const int nx, const double xStep, const char *fi
     file.close();
 }
 
-void getVLimits(int size, int rank, int* nvStart, int* nvEnd) {
-    int i = 0, nv = 9;
+void getVLimits(int size, int rank, int nvFull, int* nvStart, int* nvEnd) {
+    int i = 0, nv = nvFull;
     int *diffs = new int[size]();
     while (nv --) {
         diffs[i % size] ++;
         i ++;
     }
-    *nvStart = - 4;
+    *nvStart = - nvFull / 2;
     for (i = 0; i < rank; i ++) {
         *nvStart += diffs[i];
     }
@@ -43,19 +43,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     char *endptr;
-    int nx = (int) strtol(argv[1], &endptr, 10);
-    double xRange = strtod(argv[2], &endptr),
-           highT = strtod(argv[3], &endptr),
+    int nx = (int) strtol(argv[1], &endptr, 10), nv = (int) strtol(argv[2], &endptr, 10);
+    double highT = strtod(argv[3], &endptr),
            lowT = strtod(argv[4], &endptr),
            eps = strtod(argv[5], &endptr);
     char *outputFile = argv[6];
+    if (nv % 2 == 0) {
+        nv --;
+    }
 
     // Limits calculation
     int nvStart, nvEnd;
-    getVLimits(size, rank, &nvStart, &nvEnd);
+    getVLimits(size, rank, nv, &nvStart, &nvEnd);
     std::cout << nvStart << " " << nvEnd << std::endl;
 
-    auto* data = new Data(rank, size, nx, xRange, highT, lowT, eps, nvStart, nvEnd);
+    auto* data = new Data(rank, size, nx, nv, highT, lowT, eps, nvStart, nvEnd);
     data->setInitialValues();
 
     double startTime = MPI_Wtime();
