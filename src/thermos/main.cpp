@@ -3,9 +3,41 @@
 //
 
 #include <iostream>
+#include <fstream>
+#include <cmath>
+#include <mpi.h>
 #include "Data.h"
 
+void toFile(const double* data, const int nx, const double xStep, const char *filename) {
+    std::ofstream file;
+    file.open(filename);
+    for (int xIndex = 0; xIndex < nx; xIndex ++) {
+        file << (double) xIndex * xStep << "\t" << data[xIndex] << std::endl;
+    }
+    file.close();
+}
+
+void getVLimits(int size, int rank, int* nvStart, int* nvEnd) {
+    int i = 0, nv = 9;
+    int *diffs = new int[size]();
+    while (nv --) {
+        diffs[i % size] ++;
+        i ++;
+    }
+    *nvStart = - 4;
+    for (i = 0; i < rank; i ++) {
+        *nvStart += diffs[i];
+    }
+    *nvEnd = *nvStart + diffs[rank];
+}
+
 int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    // Input parsing
     if (argc < 7) {
         std::cout << "Недостаточно аргументов.\n";
         return 1;
@@ -17,11 +49,25 @@ int main(int argc, char* argv[]) {
            lowT = strtod(argv[4], &endptr),
            eps = strtod(argv[5], &endptr);
     char *outputFile = argv[6];
-    auto* data = new Data(nx, xRange, highT, lowT, eps);
+
+    // Limits calculation
+    int nvStart, nvEnd;
+    getVLimits(size, rank, &nvStart, &nvEnd);
+    std::cout << nvStart << " " << nvEnd << std::endl;
+
+    auto* data = new Data(rank, size, nx, xRange, highT, lowT, eps, nvStart, nvEnd);
     data->setInitialValues();
+
+    double startTime = MPI_Wtime();
     data->solve();
-    data->calcTemperature();
-    data->toFile(outputFile);
+    double endTime = MPI_Wtime();
+    std::cout << (endTime - startTime) * 1000 << " мс." << std::endl;
+
+    if (rank == 0) {
+        toFile(data->getTemperature(), data->getNx(), data->getXStep(), outputFile);
+    }
+
+    MPI_Finalize();
     return 0;
 }
 

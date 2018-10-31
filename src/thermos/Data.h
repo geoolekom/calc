@@ -8,18 +8,25 @@
 
 class Data {
 private:
-    double xStep, vStep, tStep;
-    int nx, nv;
+    int rank, size;
+    double xStep;
+    int nx, nv, nvStart, nvEnd;
     double *curr, *next;
     double eps;
     double lowT, highT;
     double *temperature, *prevTemperature;
+    double *bufferNom, *bufferDenom;
 public:
     Data();
-    Data(int nx, double xRange, double highT, double lowT, double eps);
+    Data(int rank, int size, int nx, double xRange, double highT, double lowT, double eps, int nvStart, int nvEnd);
     ~Data();
     int index(int xIndex, int vIndex);
     double getValue(int xIndex, int vIndex);
+
+    int getNx() { return nx; }
+    double getXStep() { return xStep; }
+    double* getData() { return curr; }
+    double* getTemperature() { return temperature; }
 
     void setInitialValues();
 
@@ -29,8 +36,7 @@ public:
     void solve();
     bool breakCondition();
 
-    void toFile(const char* filename);
-    void calcTemperature();
+    void calcTemperature(int stepNumber);
 };
 
 

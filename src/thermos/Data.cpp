@@ -2,18 +2,23 @@
 // Created by geoolekom on 30.10.18.
 //
 
-#include "Data.h"
+#include <mpi.h>
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include "Data.h"
 
-Data::Data(int nx, double xRange, double highT, double lowT, double eps) : nx(nx), highT(highT), lowT(lowT), xStep(xRange / nx), eps(eps) {
-    nv = 5;
-    curr = new double[nx * 2 * nv];
-    next = new double[nx * 2 * nv];
+Data::Data(int rank, int size, int nx, double xRange, double highT, double lowT, double eps, int nvStart, int nvEnd)
+: rank(rank), size(size), nx(nx), highT(highT), lowT(lowT), xStep(xRange / nx), eps(eps), nvStart(nvStart), nvEnd(nvEnd) {
+    nv = nvEnd - nvStart;
+    curr = new double[nx * nv];
+    next = new double[nx * nv];
 
     temperature = new double[nx];
     prevTemperature = new double[nx];
+
+    bufferNom = new double[nx * (size - 1)];
+    bufferDenom = new double[nx * (size - 1)];
 };
 
 Data::~Data() {
@@ -21,17 +26,19 @@ Data::~Data() {
     delete[] next;
     delete[] temperature;
     delete[] prevTemperature;
+    delete[] bufferNom;
+    delete[] bufferDenom;
 }
 
 int Data::index(int xIndex, int vIndex) {
-    return ((xIndex + nx) % nx) + ((vIndex + 2 * nv) % (2 * nv)) * nx;
+    return ((xIndex + nx) % nx) + ((vIndex - nvStart + nv) % nv) * nx;
 }
 
 double Data::getValue(int xIndex, int vIndex) {
     if (xIndex == 0) {
-        return exp(- 0.5 * vIndex * vIndex);
-    } else if (xIndex + 1 == nx) {
         return exp(- 0.5 * highT / lowT * vIndex * vIndex);
+    } else if (xIndex + 1 == nx) {
+        return exp(- 0.5 * vIndex * vIndex);
     } else {
         return curr[index(xIndex, vIndex)];
     }
@@ -58,7 +65,7 @@ double Data::calcFunc(int xIndex, int vIndex) {
 }
 
 void Data::step(int stepNumber) {
-    for (int vIndex = - nv + 1; vIndex < nv; vIndex ++) {
+    for (int vIndex = nvStart; vIndex < nvEnd; vIndex ++) {
         for (int xIndex = 0; xIndex < nx; xIndex ++) {
             next[index(xIndex, vIndex)] = calcFunc(xIndex, vIndex);
         }
@@ -68,35 +75,43 @@ void Data::step(int stepNumber) {
 void Data::solve() {
     double* temp;
     int i = 0;
-    while (!breakCondition()) {
+    while (true) {
         step(i);
         temp = curr;
         curr = next;
         next = temp;
 
-        calcTemperature();
-        temp = temperature;
-        temperature = prevTemperature;
-        prevTemperature = temp;
+        if (i % 100 == 0) {
+            calcTemperature(i);
+        } else if (i % 100 == 1) {
+            temp = temperature;
+            temperature = prevTemperature;
+            prevTemperature = temp;
+            calcTemperature(i);
+
+            if (breakCondition()) {
+                break;
+            }
+        }
+
         i ++;
     }
-    std::cout << "Solved in " << i << " steps.\n";
+    std::cout << "Решено за " << i << " шагов.\n";
 }
 
 bool Data::breakCondition() {
-    calcTemperature();
     double maxDelta = 0;
-    for (int xIndex = 1; xIndex < nx; xIndex ++) {
-        double delta = (temperature[xIndex] - prevTemperature[xIndex]) / temperature[xIndex];
+    for (int xIndex = 0; xIndex < nx; xIndex ++) {
+        double delta = fabs(temperature[xIndex] - prevTemperature[xIndex]) / temperature[xIndex];
         if (delta > maxDelta){
             maxDelta = delta;
         }
     }
-    return maxDelta < eps;
+    return nx * maxDelta < eps;
 }
 
 void Data::setInitialValues() {
-    for (int vIndex = - nv + 1; vIndex < nv; vIndex ++) {
+    for (int vIndex = nvStart; vIndex < nvEnd; vIndex ++) {
         for (int xIndex = 0; xIndex < nx - 1; xIndex ++) {
             curr[index(xIndex, vIndex)] = exp(- 0.5 * highT / lowT * vIndex * vIndex);
         }
@@ -104,28 +119,46 @@ void Data::setInitialValues() {
     }
 }
 
-void Data::toFile(const char *filename) {
-    std::ofstream file;
-    file.open(filename);
-    for (int xIndex = 0; xIndex < nx; xIndex ++) {
-        file << (double) xIndex * xStep << "\t" << temperature[xIndex] << std::endl;
-    }
-    file.close();
-}
+void Data::calcTemperature(int stepNumber) {
+    auto *denom = new double[nx]();
+    auto *nom = new double[nx]();
 
-void Data::calcTemperature() {
-    auto *denom = new double[nx];
-    auto *nom = new double[nx];
-
-    for (int vIndex = - nv + 1; vIndex < nv; vIndex ++) {
+    for (int vIndex = nvStart; vIndex < nvEnd; vIndex ++) {
         for (int xIndex = 0; xIndex < nx; xIndex ++) {
-            denom[xIndex] += curr[index(xIndex, vIndex)];
             nom[xIndex] += vIndex * vIndex * curr[index(xIndex, vIndex)];
+            denom[xIndex] += curr[index(xIndex, vIndex)];
         }
     }
-    for (int xIndex = 0; xIndex < nx; xIndex ++) {
-        temperature[xIndex] = highT * nom[xIndex] / denom[xIndex];
+
+    if (rank == 0) {
+        MPI_Request *requests;
+        MPI_Status *statuses;
+        if (size > 1) {
+            requests = new MPI_Request[2 * (size - 1)];
+            statuses = new MPI_Status[2 * (size - 1)];
+            for (int i = 0; i < size - 1; i ++) {
+                MPI_Irecv(bufferNom + i * nx, nx, MPI_DOUBLE, i + 1, 0, MPI_COMM_WORLD, requests + i);
+                MPI_Irecv(bufferDenom + i * nx, nx, MPI_DOUBLE, i + 1, 1, MPI_COMM_WORLD, requests + size - 1 + i);
+            }
+
+            MPI_Waitall(size, requests, statuses);
+            for (int i = 0; i < size - 1; i ++) {
+                for (int xIndex = 0; xIndex < nx; xIndex ++) {
+                    denom[xIndex] += bufferDenom[i * nx + xIndex];
+                    nom[xIndex] += bufferNom[i * nx + xIndex];
+                }
+            }
+        }
+        for (int xIndex = 0; xIndex < nx; xIndex ++) {
+            temperature[xIndex] = highT * nom[xIndex] / denom[xIndex];
+        }
+    } else {
+        MPI_Send(nom, nx, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(denom, nx, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
     }
+
+    MPI_Bcast(temperature, nx, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
     delete[] denom;
     delete[] nom;
 }

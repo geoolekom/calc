@@ -15,5 +15,5 @@ add_executable(life ${LIFE_SRC})
 set(CLIFE_SRC src/clife/main.cpp src/clife/Data.cpp src/clife/Worker.cpp src/clife/Master.cpp)
 add_executable(clife ${CLIFE_SRC})
 
-set(THERMOS_SRC src/thermos/main.cpp src/thermos/Data.cpp src/thermos/Data.h)
+set(THERMOS_SRC src/thermos/main.cpp src/thermos/Data.cpp)
 add_executable(thermos ${THERMOS_SRC})
