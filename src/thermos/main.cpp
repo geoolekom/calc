@@ -55,7 +55,6 @@ int main(int argc, char* argv[]) {
     // Limits calculation
     int nvStart, nvEnd;
     getVLimits(size, rank, nv, &nvStart, &nvEnd);
-    std::cout << nvStart << " " << nvEnd << std::endl;
 
     auto* data = new Data(rank, size, nx, nv, highT, lowT, eps, nvStart, nvEnd);
     data->setInitialValues();

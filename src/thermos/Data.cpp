@@ -54,9 +54,7 @@ double Data::deltaFunc(int xIndex, int vIndex) {
 
 double Data::calcFunc(int xIndex, int vIndex) {
     double gamma = fabs(vIndex * vStep / 5.0);
-    if (xIndex == 0) {
-        return curr[index(xIndex, vIndex)];
-    } else if (xIndex + 1 == nx) {
+    if (xIndex == 0 || xIndex + 1 == nx || vIndex == 0) {
         return curr[index(xIndex, vIndex)];
     } else if (vIndex > 0) {
         return curr[index(xIndex, vIndex)] + (1 - gamma) * deltaFunc(xIndex, vIndex) / 2.0;
@@ -76,6 +74,7 @@ void Data::step(int stepNumber) {
 void Data::solve() {
     double* temp;
     int i = 0;
+    calcTemperature(0);
     while (true) {
         step(i);
         temp = curr;
@@ -83,8 +82,6 @@ void Data::solve() {
         next = temp;
 
         if (i % diffStep == 0) {
-            calcTemperature(i);
-        } else if (i % diffStep == 1) {
             temp = temperature;
             temperature = prevTemperature;
             prevTemperature = temp;
