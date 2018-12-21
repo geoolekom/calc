@@ -26,7 +26,7 @@ void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
                     vy = grid->getVy(vyIndex);
                     double value = exp(- (vx * vx + vy * vy) / 2) / denom;
                     if (xIndex >= grid->getXIndex(geometry->xWallStart)) {
-                        value /= 10e6;
+                        value /= 1e6;
                     }
                     state->setValue(xIndex, yIndex, vxIndex, vyIndex, value);
                 }
@@ -39,14 +39,14 @@ void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
 int main(int argc, char* argv[]) {
     auto* geometry = new Tank2D(5, 5.5, 2);
     auto* grid = new Grid2D(0.2, 0.2, 0.25, 0.25);
-    auto* state = new State2D(50, 25, -20, 20, -20, 20);
+    auto* state = new State2D(50, 25, -20, 21, -20, 21);
     setInitialValues(state, grid, geometry);
 
     double tStep = 1e-2;
     auto* evolution = new Evolution2D(tStep, &state, grid, geometry);
     std::ofstream file;
     char filename[30];
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 400; i++) {
         evolution->evolve(i);
         sprintf(filename, "data/flow/density_%03d.out", i);
         file.open(filename);
