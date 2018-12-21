@@ -17,3 +17,6 @@ add_executable(clife ${CLIFE_SRC})
 
 set(THERMOS_SRC src/thermos/main.cpp src/thermos/Data.cpp)
 add_executable(thermos ${THERMOS_SRC})
+
+set(FLOW_SRC src/flow/main.cpp src/flow/State2D.cpp src/flow/State2D.h src/flow/Grid2D.cpp src/flow/Grid2D.h src/flow/Evolution2D.cpp src/flow/Evolution2D.h src/flow/Tank2D.cpp src/flow/Tank2D.h)
+add_executable(flow ${FLOW_SRC})
