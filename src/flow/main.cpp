@@ -7,6 +7,7 @@
 #include "Grid2D.h"
 #include "Tank2D.h"
 #include "Evolution2D.h"
+#include "Storage2D.h"
 
 
 void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
@@ -25,7 +26,7 @@ void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
                     vx = grid->getVx(vxIndex);
                     vy = grid->getVy(vyIndex);
                     double value = exp(- (vx * vx + vy * vy) / 2) / denom;
-                    if (xIndex >= grid->getXIndex(geometry->xWallStart)) {
+                    if (xIndex >= geometry->rightWallLeftX) {
                         value /= 1e6;
                     }
                     state->setValue(xIndex, yIndex, vxIndex, vyIndex, value);
@@ -37,20 +38,21 @@ void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
 
 
 int main(int argc, char* argv[]) {
-    auto* geometry = new Tank2D(5, 5.5, 2);
-    auto* grid = new Grid2D(0.2, 0.2, 0.25, 0.25);
-    auto* state = new State2D(50, 25, -20, 21, -20, 21);
+    auto state = new State2D(50, 25, -20, 21, -20, 21);
+    auto geometry = new Tank2D(25, 26, 3, 25, 30, 31, 3, 50);
+    auto grid = new Grid2D(0.2, 0.2, 0.25, 0.25);
     setInitialValues(state, grid, geometry);
 
     double tStep = 1e-2;
-    auto* evolution = new Evolution2D(tStep, &state, grid, geometry);
+    auto evolution = new Evolution2D(tStep, &state, grid, geometry);
+    auto storage = new Storage2D(state, grid);
     std::ofstream file;
     char filename[30];
-    for (int i = 0; i < 400; i++) {
+    for (int i = 0; i < 800; i++) {
         evolution->evolve(i);
         sprintf(filename, "data/flow/density_%03d.out", i);
         file.open(filename);
-        evolution->exportDensity(&file);
+        storage->exportDensity(&file);
         std::cout << "Шаг " << i << "\n";
         file.close();
     }
@@ -59,5 +61,6 @@ int main(int argc, char* argv[]) {
     delete state;
     delete grid;
     delete geometry;
+    delete storage;
     return 0;
 }
