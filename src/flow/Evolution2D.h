@@ -11,6 +11,7 @@
 #include "Grid2D.h"
 #include "Tank2D.h"
 #include "State2D.h"
+#include "DoduladCI.h"
 
 class Evolution2D {
 private:
@@ -22,9 +23,11 @@ private:
     State2D* prev;
     int currentStep = 0;
     double tStep;
+    DoduladCI* ci;
+
 public:
-    Evolution2D(double tStep, State2D** state, Grid2D* grid, Tank2D* geometry) :
-            returningState(state), grid(grid), geometry(geometry), tStep(tStep) {
+    Evolution2D(double tStep, State2D** state, Grid2D* grid, Tank2D* geometry, DoduladCI* ci) :
+            returningState(state), grid(grid), geometry(geometry), tStep(tStep), ci(ci) {
         curr = *state;
         prev = new State2D(**state);
     }
@@ -40,6 +43,7 @@ public:
         }
         State2D* temp;
         for (int i = currentStep; i < lastStep; i ++) {
+            ci->timeGenerator();
             temp = curr;
             curr = prev;
             prev = temp;
@@ -115,7 +119,7 @@ public:
     void makeStep(int step) {
         double h, vx, vy;
         char direction = 'N';
-        bool diffuseReflection, borderReached, directionCoherence;
+        bool borderReached;
 
         for (int yIndex = 0; yIndex < prev->yIndexMax; yIndex ++) {
             for (int xIndex = 0; xIndex < prev->xIndexMax; xIndex ++) {
@@ -148,6 +152,8 @@ public:
                         curr->setValue(xIndex, yIndex, vxIndex, vyIndex, value);
                     }
                 }
+
+                ci->calculateIntegral(xIndex, yIndex);
             }
         }
     }

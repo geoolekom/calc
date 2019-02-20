@@ -44,10 +44,14 @@ public:
     };
 
     inline int index(int xIndex, int yIndex, int vxIndex, int vyIndex) {
-        return (xIndex + nx) % nx
-            + ((yIndex + ny) % ny) * nx
-            + ((vxIndex + nvx) % nvx) * nx * ny
-            + ((vyIndex + nvy) % nvy) * nx * ny * nvx;
+        return (vxIndex + nvx) % nvx
+            + ((vyIndex + nvy) % nvy) * nvx
+            + ((xIndex + nx) % nx) * nvx * nvy
+            + ((yIndex + ny) % ny) * nvx * nvy * nx;
+    }
+
+    inline double* velocitySlice(int xIndex, int yIndex) {
+        return data + nvx * nvy * (yIndex + xIndex * ny);
     }
 };
 

@@ -44,11 +44,12 @@ int main(int argc, char* argv[]) {
     setInitialValues(state, grid, geometry);
 
     double tStep = 1e-2;
-    auto evolution = new Evolution2D(tStep, &state, grid, geometry);
+    auto ci = new DoduladCI(tStep, grid->vxStep, state);
+    auto evolution = new Evolution2D(tStep, &state, grid, geometry, ci);
     auto storage = new Storage2D(state, grid);
     std::ofstream file;
     char filename[30];
-    for (int i = 0; i < 800; i++) {
+    for (int i = 0; i < 200; i++) {
         evolution->evolve(i);
         sprintf(filename, "data/flow/density_%03d.out", i);
         file.open(filename);
