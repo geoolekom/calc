@@ -11,7 +11,7 @@
 #include "Grid2D.h"
 #include "Tank2D.h"
 #include "State2D.h"
-#include "DoduladCI.h"
+#include "interfaces/CollisionIntegral.h"
 
 class Evolution2D {
 private:
@@ -23,10 +23,10 @@ private:
     State2D* prev;
     int currentStep = 0;
     double tStep;
-    DoduladCI* ci;
+    CollisionIntegral<State2D>* ci;
 
 public:
-    Evolution2D(double tStep, State2D** state, Grid2D* grid, Tank2D* geometry, DoduladCI* ci) :
+    Evolution2D(double tStep, State2D** state, Grid2D* grid, Tank2D* geometry, CollisionIntegral<State2D>* ci) :
             returningState(state), grid(grid), geometry(geometry), tStep(tStep), ci(ci) {
         curr = *state;
         prev = new State2D(**state);
@@ -43,7 +43,6 @@ public:
         }
         State2D* temp;
         for (int i = currentStep; i < lastStep; i ++) {
-            ci->timeGenerator();
             temp = curr;
             curr = prev;
             prev = temp;
@@ -120,6 +119,7 @@ public:
         double h, vx, vy;
         char direction = 'N';
         bool borderReached;
+        ci->stepForward();
 
         for (int yIndex = 0; yIndex < prev->yIndexMax; yIndex ++) {
             for (int xIndex = 0; xIndex < prev->xIndexMax; xIndex ++) {
@@ -153,7 +153,7 @@ public:
                     }
                 }
 
-                ci->calculateIntegral(xIndex, yIndex);
+                ci->calculateIntegral(curr, xIndex, yIndex);
             }
         }
     }

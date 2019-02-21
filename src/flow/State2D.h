@@ -5,8 +5,8 @@
 class State2D {
 private:
     double* data;
-    int nvx, nvy, nx, ny;
 public:
+    int nvx, nvy, nx, ny;
     int xIndexMax, yIndexMax, vxIndexMin, vxIndexMax, vyIndexMin, vyIndexMax;
 
     inline double getValue(int xIndex, int yIndex, int vxIndex, int vyIndex) {

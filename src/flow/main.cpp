@@ -8,6 +8,7 @@
 #include "Tank2D.h"
 #include "Evolution2D.h"
 #include "Storage2D.h"
+#include "VagapovaCI.h"
 
 
 void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
@@ -43,8 +44,8 @@ int main(int argc, char* argv[]) {
     auto grid = new Grid2D(0.2, 0.2, 0.25, 0.25);
     setInitialValues(state, grid, geometry);
 
-    double tStep = 1e-2;
-    auto ci = new DoduladCI(tStep, grid->vxStep, state);
+    double tStep = 2e-2;
+    auto ci = new VagapovaCI(tStep, grid->vxStep, state);
     auto evolution = new Evolution2D(tStep, &state, grid, geometry, ci);
     auto storage = new Storage2D(state, grid);
     std::ofstream file;
@@ -57,7 +58,6 @@ int main(int argc, char* argv[]) {
         std::cout << "Шаг " << i << "\n";
         file.close();
     }
-
     delete evolution;
     delete state;
     delete grid;

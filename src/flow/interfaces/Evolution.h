@@ -7,17 +7,35 @@
 
 
 #include <iostream>
+#include "State.h"
 
-template <typename State, typename Geometry, typename Grid, typename Point>
+class Grid {};
+
+class Geometry {};
+
+template <typename StateType>
 class Evolution {
 private:
-    State *prev, *curr;
+    StateType** state;
+    StateType *prev, *curr;
     Geometry *geometry;
     Grid *grid;
 public:
-    void evolve(State** state, int numSteps) {
-        State* temp;
+    Evolution (StateType** initialState) : state(initialState) {
+        long int size = (*initialState)->getSize();
+        double* data = new double[size]();
+        prev = new StateType(data, size);
+    }
+
+    ~Evolution() {
+        delete[] prev->getData();
+        delete prev;
+    }
+
+    void evolve(int numSteps) {
+        StateType *temp, *curr;
         for (int i = 0; i < numSteps; i ++) {
+            std::cout << i << std::endl;
             temp = curr;
             curr = prev;
             prev = temp;
@@ -29,32 +47,32 @@ public:
     void makeStep(int step) {
         double value, flowFactor;
         bool borderReached;
-        Point mirrorNormal;
+//    Point mirrorNormal;
 
-        for (const auto& spatialPoint : prev) {
+        for (SpatialPoint point : *prev) {
 
-            flowFactor = calculateFlowFactor(spatialPoint);
-            mirrorNormal = geometry->getMirrorNormal(spatialPoint);
-            borderReached = geometry->isBorderReached(spatialPoint);
+            flowFactor = calculateFlowFactor(point);
+//        mirrorNormal = geometry->getMirrorNormal(spatialPoint);
+//        borderReached = geometry->isBorderReached(spatialPoint);
 
-            for (const auto& velocityPoint : spatialPoint) {
-                if (geometry->isDiffuseReflection(spatialPoint, velocityPoint)) {
-                    value = flowFactor * exp(- velocityPoint * velocityPoint / 2);
-                } else if (geometry->isMirrorReflection(spatialPoint, velocityPoint)) {
-                    value = prev->getValue(spatialPoint, mirrorNormal * velocityPoint);
-                } else if (borderReached) {
-                    value = prev->getValue(spatialPoint, velocityPoint);
-                } else {
-                    value = calculateDistributionFunction(spatialPoint, velocityPoint);
-                }
-                curr->setValue(spatialPoint, velocityPoint, value);
+            for (Velocity velocity : point) {
+                std::cout << "velocity " << "\n";
+//            if (geometry->isDiffuseReflection(spatialPoint, velocityPoint)) {
+//                value = flowFactor * exp(- velocityPoint * velocityPoint / 2);
+//            } else if (geometry->isMirrorReflection(spatialPoint, velocityPoint)) {
+//                value = prev->getValue(spatialPoint, mirrorNormal * velocityPoint);
+//            } else if (borderReached) {
+//                value = prev->getValue(spatialPoint, velocityPoint);
+//            } else {
+//                value = calculateDistributionFunction(spatialPoint, velocityPoint);
+//            }
+//            curr->setValue(spatialPoint, velocityPoint, value);
             }
         }
     };
 
-    virtual double calculateFlowFactor(const Point& p) {};
-
-    virtual double calculateDistributionFunction(const Point& p, const Point& v) {};
+    virtual double calculateFlowFactor(const SpatialPoint& p) = 0;
+    virtual double calculateDistributionFunction(const SpatialPoint& p, const Velocity& v) = 0;
 };
 
 
