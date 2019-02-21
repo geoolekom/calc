@@ -8,7 +8,7 @@
 #include "Tank2D.h"
 #include "Evolution2D.h"
 #include "Storage2D.h"
-#include "VagapovaCI.h"
+#include "DoduladCI.h"
 
 
 void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     setInitialValues(state, grid, geometry);
 
     double tStep = 2e-2;
-    auto ci = new VagapovaCI(tStep, grid->vxStep, state);
+    auto ci = new CollisionIntegral<State2D>();
     auto evolution = new Evolution2D(tStep, &state, grid, geometry, ci);
     auto storage = new Storage2D(state, grid);
     std::ofstream file;
