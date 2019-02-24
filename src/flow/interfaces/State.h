@@ -6,6 +6,7 @@
 #define CALC_STATE_H
 
 #include <iostream>
+#include <array>
 
 
 template <typename StateType, typename PointType>
@@ -20,17 +21,11 @@ public:
     PointType& operator*() { return value; };
     selfType& operator++() {
         this->value = state->populatePoint(this->value.getData() + this->value.getSize());
-        return *this;
+        return *(this);
     };
     bool operator==(const selfType& other) { return this->value.getData() == other.value.getData(); };
     bool operator!=(const selfType& other) { return this->value.getData() != other.value.getData(); };
     bool operator<(const selfType& other) { return this->value.getData() - other.value.getData() < 0; };
-};
-
-
-class Vector {
-public:
-    virtual double operator* (const Vector& v) const { return 0; };
 };
 
 
@@ -39,7 +34,7 @@ protected:
     double* data;
     long int size;
 public:
-    Point(double *data, long int size = 1) : data(data), size(size) {};
+    Point(double *data, long int size) : data(data), size(size) {};
     ~Point() {};
     double* getData() const { return this->data; };
     long int getSize() const { return this->size; };
@@ -47,23 +42,23 @@ public:
 };
 
 
-class Velocity : public Point, public Vector {
+class Velocity : public Point {
 public:
-    Velocity(double* data, long int size = 1) : Point(data, size) {};
+    Velocity(double* data, long int size) : Point(data, size) {};
 };
 
 
 template <typename VelocityType>
-class SpatialPoint : public Point, public Vector {
+class SpatialPoint : public Point {
 protected:
     virtual VelocityType populatePoint(double* data) {
-        return VelocityType(data);
+        return VelocityType(data, 1);
     }
     friend class PointIterator<SpatialPoint, VelocityType>;
 public:
     typedef VelocityType velocityType;
 
-    SpatialPoint(double* data, long int size = 1) : Point(data, size) {};
+    SpatialPoint(double* data, long int size) : Point(data, size) {};
 
     PointIterator<SpatialPoint, VelocityType> begin() {
         return PointIterator<SpatialPoint, VelocityType>(this, this->populatePoint(this->data));
@@ -79,14 +74,14 @@ template <typename SpatialPointType>
 class State : public Point {
 protected:
     virtual SpatialPointType populatePoint(double* data) {
-        return SpatialPointType(data);
+        return SpatialPointType(data, 1);
     }
     friend class PointIterator<State, SpatialPointType>;
 public:
     typedef SpatialPointType spatialPointType;
     typedef typename SpatialPointType::velocityType velocityType;
 
-    State(double* data, long int size = 1) : Point(data, size) {};
+    State(double* data, long int size) : Point(data, size) {};
 
     PointIterator<State, SpatialPointType> begin() {
         return PointIterator<State, SpatialPointType>(this, this->populatePoint(this->data));

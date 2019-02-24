@@ -8,8 +8,8 @@
 template <typename State>
 class CollisionIntegral {
 public:
-    virtual void stepForward() {};
-    virtual void calculateIntegral(State* state, int xIndex, int yIndex) {};
+    virtual void stepForward() = 0;
+    virtual void calculateIntegral(State* state, int xIndex, int yIndex) = 0;
 };
 
 #endif //CALC_COLLISIONINTEGRAL_H

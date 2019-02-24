@@ -5,76 +5,99 @@
 #ifndef CALC_EVOLUTION_H
 #define CALC_EVOLUTION_H
 
-#include "State.h"
+#include <cmath>
+#include "Space.h"
+#include "Geometry.h"
+#include "Grid.h"
 
-class Grid {};
-
-class Geometry {};
-
-template <typename StateType>
+template <std::size_t dimension>
 class Evolution {
-private:
-    StateType** state;
-    StateType *prev, *curr;
-    Geometry *geometry;
-    Grid *grid;
 public:
-    typedef typename StateType::spatialPointType spatialPointType;
-    typedef typename StateType::velocityType velocityType;
+    typedef Space<dimension> spaceType;
+    typedef typename spaceType::vectorType vectorType;
 
-    Evolution (StateType** initialState) : state(initialState) {
-        long int size = (*initialState)->getSize();
-        double* data = new double[size]();
-        prev = new StateType(data, size);
-        curr = *state;
+    typedef Geometry<dimension> geometryType;
+    typedef typename geometryType::Matrix matrixType;
+
+    typedef Grid<dimension> gridType;
+protected:
+    spaceType** space;
+    spaceType *prev, *curr;
+    geometryType *geometry;
+    gridType *grid;
+    double tStep;
+public:
+
+    Evolution (double tStep, spaceType** initial, geometryType* geometry, gridType* grid) :
+        space(initial), geometry(geometry), grid(grid), tStep(tStep) {
+        prev = new spaceType(**initial);
+        curr = *space;
     }
 
     ~Evolution() {
-        delete[] prev->getData();
         delete prev;
     }
 
     void evolve(int numSteps) {
-        StateType *temp;
+        spaceType *temp;
         for (int i = 0; i < numSteps; i ++) {
-            std::cout << "Шаг " << i << "\n";
             temp = curr;
             curr = prev;
             prev = temp;
             this->makeStep(i);
         }
-        *state = curr;
+        *space = curr;
     };
 
     void makeStep(int step) {
         double value, flowFactor;
         bool borderReached;
-//    Point mirrorNormal;
+        matrixType mirrorNormal;
+        vectorType diffusionMask;
+        vectorType shift = {{5, 5}};
 
-        for (spatialPointType& point : *prev) {
+        for (vectorType& xIndex : prev->spaceIterable()) {
+            diffusionMask = geometry->getDiffusionMask(xIndex);
+            flowFactor = calculateFlowFactor(diffusionMask, xIndex);
+            mirrorNormal = geometry->getMirrorNormal(xIndex);
+            borderReached = geometry->isBorderReached(xIndex);
 
-            flowFactor = calculateFlowFactor(point);
-//        mirrorNormal = geometry->getMirrorNormal(spatialPoint);
-//        borderReached = geometry->isBorderReached(spatialPoint);
-
-            for (velocityType& velocity : point) {
-                std::cout << velocity.toString() << "\n";
-//            if (geometry->isDiffuseReflection(spatialPoint, velocityPoint)) {
-//                value = flowFactor * exp(- velocityPoint * velocityPoint / 2);
-//            } else if (geometry->isMirrorReflection(spatialPoint, velocityPoint)) {
-//                value = prev->getValue(spatialPoint, mirrorNormal * velocityPoint);
-//            } else if (borderReached) {
-//                value = prev->getValue(spatialPoint, velocityPoint);
-//            } else {
-//                value = calculateDistributionFunction(spatialPoint, velocityPoint);
-//            }
-//            curr->setValue(spatialPoint, velocityPoint, value);
+            for (vectorType& vIndex : prev->velocityIterable()) {
+//                std::cout << "SPACE: " << xIndex[0] << " " << xIndex[1] << "\t";
+//                std::cout << "VELOCITY: " << vIndex[0] << " " << vIndex[1] << "\t";
+                if (geometry->isDiffuseReflection(xIndex, vIndex - shift)) {
+                    auto v = grid->getVelocity(vIndex - shift);
+                    value = flowFactor * exp(- (v * v) / 2);
+                } else if (geometry->isMirrorReflection(xIndex, vIndex - shift)) {
+                    value = prev->getValue(xIndex, mirrorNormal * (vIndex - shift) + shift);
+                } else if (borderReached) {
+                    value = prev->getValue(xIndex, vIndex);
+                } else {
+                    value = calculateDistributionFunction(xIndex, vIndex);
+                }
+                curr->setValue(xIndex, vIndex, value);
+//                std::cout << "Value: " << value << "\t" << curr->getValue(xIndex, vIndex) << std::endl;
             }
         }
     };
 
-    virtual double calculateFlowFactor(const spatialPointType& p) = 0;
-    virtual double calculateDistributionFunction(const spatialPointType& p, const velocityType& v) = 0;
+    double calculateFlowFactor(const vectorType& mask, const vectorType& xIndex) {
+        double denom = 0, nom = 0;
+        vectorType shift = {{5, 5}};
+
+        for (vectorType& vIndex : prev->velocityIterable()) {
+            auto v = grid->getVelocity(vIndex - shift);
+            double multiplier = v * mask;
+            if (multiplier > 0) {
+                denom += multiplier * exp(- (v * v) / 2);
+            } else {
+                nom += multiplier * (prev->getValue(xIndex, vIndex) + prev->getValue(xIndex + mask, vIndex)) / 2.0;
+            }
+        }
+        return denom == 0 ? 0 : nom / denom;
+    };
+
+    virtual double calculateDistributionFunction(const vectorType& xIndex, const vectorType& vIndex) = 0;
 };
 
 

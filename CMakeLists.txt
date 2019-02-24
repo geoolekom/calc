@@ -31,3 +31,10 @@ set(FLOW_SRC
         src/flow/VagapovaCI.cpp src/flow/VagapovaCI.h
         src/flow/interfaces/CollisionIntegral.h)
 add_executable(flow ${FLOW_SRC})
+
+set(TEST_SRC
+        src/flow/test.cpp
+        src/flow/interfaces/Evolution.h src/flow/interfaces/Geometry.h
+        src/flow/interfaces/CollisionIntegral.h src/flow/interfaces/Space.h
+        src/flow/interfaces/Grid.h src/flow/interfaces/Storage.h)
+add_executable(test ${TEST_SRC})
