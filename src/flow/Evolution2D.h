@@ -13,6 +13,7 @@
 #include "State2D.h"
 #include "interfaces/CollisionIntegral.h"
 
+
 class Evolution2D {
 private:
     Tank2D* geometry;
@@ -43,72 +44,25 @@ public:
         }
         State2D* temp;
         for (int i = currentStep; i < lastStep; i ++) {
-            temp = curr;
-            curr = prev;
-            prev = temp;
+            std::swap(prev, curr);
             this->makeStep(i);
         }
         currentStep = lastStep;
         *returningState = curr;
     };
 
-    double calculateDiffusionH(int xIndex, int yIndex, char direction) {
-        double denom = 0, nom = 0, vx, vy;
-        if (direction == 'L') {
-            for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                for (int vxIndex = prev->vxIndexMin; vxIndex < 0; vxIndex ++) {
-                    vx = grid->getVx(vxIndex);
-                    vy = grid->getVy(vyIndex);
-                    denom += vx * exp(- (vx * vx + vy * vy) / 2);
-                }
-            }
-            for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                for (int vxIndex = 0; vxIndex < prev->vxIndexMax; vxIndex ++) {
-                    vx = grid->getVx(vxIndex);
-                    nom += vx * (prev->getValue(xIndex, yIndex, vxIndex, vyIndex) + prev->getValue(xIndex - 1, yIndex, vxIndex, vyIndex)) / 2.0;
-                }
+    double calculateDiffusionFactor(const intVector& xIndex, const intVector& direction) {
+        double denom = 0, nom = 0, vx, vy, multiplier;
+        doubleVector v;
 
-            }
-        } else if (direction == 'R') {
-            for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                for (int vxIndex = 0; vxIndex < prev->vxIndexMax; vxIndex++) {
-                    vx = grid->getVx(vxIndex);
-                    vy = grid->getVy(vyIndex);
-                    denom += vx * exp(- (vx * vx + vy * vy) / 2);
-                }
-            }
-            for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                for (int vxIndex = prev->vxIndexMin; vxIndex < 0; vxIndex++) {
-                    vx = grid->getVx(vxIndex);
-                    nom += vx * (prev->getValue(xIndex, yIndex, vxIndex, vyIndex) + prev->getValue(xIndex + 1, yIndex, vxIndex, vyIndex)) / 2.0;
-                }
-            }
-        } else if (direction == 'U') {
-            for (int vyIndex = 0; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex++) {
-                    vx = grid->getVx(vxIndex);
-                    vy = grid->getVy(vyIndex);
-                    denom += vy * exp(- (vx * vx + vy * vy) / 2);
-                }
-            }
-            for (int vyIndex = prev->vyIndexMin; vyIndex < 0; vyIndex ++) {
-                for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex++) {
-                    vy = grid->getVy(vyIndex);
-                    nom += vy * (prev->getValue(xIndex, yIndex, vxIndex, vyIndex) + prev->getValue(xIndex, yIndex + 1, vxIndex, vyIndex)) / 2.0;
-                }
-            }
-        } else if (direction == 'D') {
-            for (int vyIndex = prev->vyIndexMin; vyIndex < 0; vyIndex ++) {
-                for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex++) {
-                    vx = grid->getVx(vxIndex);
-                    vy = grid->getVy(vyIndex);
-                    denom += vy * exp(- (vx * vx + vy * vy) / 2);
-                }
-            }
-            for (int vyIndex = 0; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex++) {
-                    vy = grid->getVy(vyIndex);
-                    nom += vy * (prev->getValue(xIndex, yIndex, vxIndex, vyIndex) + prev->getValue(xIndex, yIndex - 1, vxIndex, vyIndex)) / 2.0;
+        for (const auto& vIndex : prev->getVelocityIterable()) {
+            v = grid->getV(vIndex);
+            if (grid->inBounds(v)) {
+                multiplier = v * direction;
+                if (multiplier > 0) {
+                    denom += multiplier * exp(- (v * v) / 2);
+                } else {
+                    nom += multiplier * (prev->getValue(xIndex, vIndex) + prev->getValue(xIndex + direction, vIndex)) / 2.0;
                 }
             }
         }
@@ -116,45 +70,46 @@ public:
     }
 
     void makeStep(int step) {
-        double h, vx, vy;
-        char direction = 'N';
+        double h, vx, vy, value;
         bool borderReached;
+
         ci->stepForward();
 
-        for (int yIndex = 0; yIndex < prev->yIndexMax; yIndex ++) {
-            for (int xIndex = 0; xIndex < prev->xIndexMax; xIndex ++) {
-
-                h = 0;
-                if (geometry->isDiffuseReflection(xIndex, yIndex, 1, 0)) {
-                    h = calculateDiffusionH(xIndex, yIndex, 'R');
-                } else if (geometry->isDiffuseReflection(xIndex, yIndex, -1, 0)) {
-                    h = calculateDiffusionH(xIndex, yIndex, 'L');
-                } else if (geometry->isDiffuseReflection(xIndex, yIndex, 0, -1)) {
-                    h = calculateDiffusionH(xIndex, yIndex, 'D');
-                }
-
-                borderReached = geometry->isBorderReached(xIndex, yIndex);
-
-                for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex ++) {
-                    for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex ++) {
-                        double value;
-                        if (geometry->isDiffuseReflection(xIndex, yIndex, vxIndex, vyIndex)) {
-                            vx = grid->getVx(vxIndex);
-                            vy = grid->getVy(vyIndex);
-                            value = h * exp(- (vx * vx + vy * vy) / 2);
-                        } else if (geometry->isMirrorReflection(xIndex, yIndex, vxIndex, vyIndex)) {
-                            value = prev->getValue(xIndex, yIndex, vxIndex, - vyIndex);
-                        } else if (borderReached) {
-                            value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
-                        } else {
-                            value = schemeChange(xIndex, yIndex, vxIndex, vyIndex);
-                        }
-                        curr->setValue(xIndex, yIndex, vxIndex, vyIndex, value);
-                    }
-                }
-
-                ci->calculateIntegral(curr, xIndex, yIndex);
+        for (const auto& xIndex : prev->getSpaceIterable()) {
+            const auto x = grid->getX(xIndex);
+            h = 0;
+            if (geometry->isDiffuseReflection(x, {1, 0})) {
+                h = calculateDiffusionFactor(xIndex, {1, 0});
+            } else if (geometry->isDiffuseReflection(x, {-1, 0})) {
+                h = calculateDiffusionFactor(xIndex, {-1, 0});
+            } else if (geometry->isDiffuseReflection(x, {0, -1})) {
+                h = calculateDiffusionFactor(xIndex, {0, -1});
             }
+
+            borderReached = geometry->isBorderReached(x);
+
+            for (const auto& vIndex : prev->getVelocityIterable()) {
+                const auto v = grid->getV(vIndex);
+                vx = v[0];
+                vy = v[1];
+                int vxIndex = vIndex[0], vyIndex = vIndex[1];
+
+                if (grid->inBounds(v)) {
+                    if (geometry->isDiffuseReflection(x, v)) {
+                        value = h * exp(-(vx * vx + vy * vy) / 2);
+                    } else if (geometry->isMirrorReflection(x, v)) {
+                        value = prev->getValue(xIndex[0], xIndex[1], vxIndex, - vyIndex - 1);
+                    } else if (borderReached) {
+                        value = prev->getValue(xIndex[0], xIndex[1], vxIndex, vyIndex);
+                    } else {
+                        value = schemeChange(xIndex[0], xIndex[1], vxIndex, vyIndex);
+                    }
+                    curr->setValue(xIndex[0], xIndex[1], vxIndex, vyIndex, value);
+                }
+            }
+
+            ci->calculateIntegral(curr, xIndex[0], xIndex[1]);
+
         }
     }
 
@@ -165,7 +120,7 @@ public:
     inline double limitValueX(double gammaX, int xIndex, int yIndex, int vxIndex, int vyIndex) {
         double value, thetaNom;
         double thetaDenom = prev->getValue(xIndex + 1, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
-        if (vxIndex > 0) {
+        if (gammaX > 0) {
             thetaNom = prev->getValue(xIndex, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex - 1, yIndex, vxIndex, vyIndex);
             value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
             return value + (1 - gammaX) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
@@ -179,7 +134,7 @@ public:
     inline double limitValueY(double gammaY, int xIndex, int yIndex, int vxIndex, int vyIndex) {
         double value, thetaNom;
         double thetaDenom = prev->getValue(xIndex, yIndex + 1, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
-        if (vyIndex > 0) {
+        if (gammaY > 0) {
             thetaNom = prev->getValue(xIndex, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex - 1, vxIndex, vyIndex);
             value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
             return value + (1 - gammaY) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;

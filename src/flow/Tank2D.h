@@ -4,46 +4,59 @@
 
 #ifndef CALC_TANK2D_H
 #define CALC_TANK2D_H
+#define EPS 1e-3
 
+
+#include <cmath>
+#include <array>
+#include <iostream>
+#include "interfaces/base.h"
 
 class Tank2D {
+private:
+    double wallLeftX, wallRightX, wallY;  // Правая стенка ящика
+    double ceilingY;  // Верхняя стенка
+    double screenLeftX, screenRightX, screenY;  // Экран
+    double endX;  // Правая граница области счета
 public:
-    
-    int rightWallLeftX, rightWallRightX, rightWallY;  // Правая стенка
-    int topWallY;  // Верхняя стенка
-    int screenLeftX, screenRightX, screenY;  // Экран
-    int tankRightX;  // Правая граница области счета
 
-    Tank2D(int rightWallLeftX, int rightWallRightX, int rightWallY, int topWallY, int screenLeftX,
-            int screenRightX, int screenY, int tankRightX) :
-            rightWallLeftX (rightWallLeftX), rightWallRightX (rightWallRightX), rightWallY (rightWallY),
-            topWallY (topWallY), screenLeftX (screenLeftX), screenRightX (screenRightX), screenY (screenY),
-            tankRightX (tankRightX) {};
+    Tank2D(double wallLeftX, double wallRightX, double wallY, double ceilingY, double screenLeftX,
+           double screenRightX, double screenY, double endX) :
+            wallLeftX (wallLeftX), wallRightX (wallRightX), wallY (wallY),
+            ceilingY (ceilingY), screenLeftX (screenLeftX), screenRightX (screenRightX), screenY (screenY),
+            endX (endX) {};
 
-    bool isDiffuseReflection(int xIndex, int yIndex, int vxIndex, int vyIndex) {
-        if (xIndex == 0 ||
-            (xIndex == rightWallRightX && yIndex >= rightWallY) ||
-            (xIndex == screenRightX && yIndex >= screenY)) {
+    bool isDiffuseReflection(const doubleVector& x, const doubleVector& v) {
+        bool value = false;
+        if ((std::abs(x[0]) < EPS) ||
+            (std::abs(x[0] - wallRightX) < EPS && (x[1] > wallY || std::abs(x[1] - wallY) < EPS)) ||
+            (std::abs(x[0] - screenRightX) < EPS && (x[1] > screenY || std::abs(x[1] - screenY) < EPS))) {
             // летящие вправо имеют рассеянное распределение
-            return vxIndex > 0;
-        } else if ((xIndex == rightWallLeftX && yIndex >= rightWallY) ||
-                   (xIndex == screenLeftX && yIndex >= screenY)) {
-            // влево
-            return vxIndex < 0;
-        } else if (yIndex == topWallY - 1 && xIndex <= rightWallLeftX) {
-            // вниз
-            return vyIndex < 0;
-        } else {
-            return false;
+            value = value || v[0] > 0;
         }
+        if ((std::abs(x[0] - wallLeftX) < EPS && (x[1] > wallY || std::abs(x[1] - wallY) < EPS)) ||
+            (std::abs(x[0] - screenLeftX) < EPS && (x[1] > screenY || std::abs(x[1] - screenY) < EPS))) {
+            // влево
+            value = value || v[0] < 0;
+        }
+        if (std::abs(x[1] - ceilingY) < EPS && (x[0] < wallLeftX || std::abs(x[0] - wallLeftX) < EPS)) {
+            // вниз
+            value = value || v[1] < 0;
+        }
+        return value;
     }
 
-    bool isMirrorReflection(int xIndex, int yIndex, int vxIndex, int vyIndex) {
-        return yIndex == 0 && vyIndex > 0;
+    bool isMirrorReflection(const doubleVector& x, const doubleVector& v) {
+        return std::abs(x[1]) < EPS && v[1] > 0;
     }
 
-    bool isBorderReached(int xIndex, int yIndex) {
-        return (xIndex > rightWallRightX && yIndex == topWallY - 1) || (xIndex == tankRightX - 1);
+    bool isBorderReached(const doubleVector& x) {
+        return ((x[0] > wallRightX || std::abs(x[0] - wallRightX) < EPS) && std::abs(x[1] - ceilingY) < EPS) ||
+            std::abs(x[0] - endX) < EPS;
+    }
+
+    bool isInTank(const doubleVector& x) {
+        return x[0] < wallLeftX || std::abs(x[0] - wallLeftX) < EPS;
     }
 };
 

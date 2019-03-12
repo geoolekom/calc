@@ -39,11 +39,8 @@ public:
     }
 
     void evolve(int numSteps) {
-        spaceType *temp;
         for (int i = 0; i < numSteps; i ++) {
-            temp = curr;
-            curr = prev;
-            prev = temp;
+            std::swap(prev, curr);
             this->makeStep(i);
         }
         *space = curr;
@@ -94,7 +91,7 @@ public:
                 nom += multiplier * (prev->getValue(xIndex, vIndex) + prev->getValue(xIndex + mask, vIndex)) / 2.0;
             }
         }
-        return denom == 0 ? 0 : nom / denom;
+        return denom == 0 ? 0 : - nom / denom;
     };
 
     virtual double calculateDistributionFunction(const vectorType& xIndex, const vectorType& vIndex) = 0;

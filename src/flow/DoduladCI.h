@@ -6,7 +6,7 @@
 #define CALC_DODULADCI_H
 
 
-#include "../../libs/ci/ci.hpp"
+#include <dodulad_ci/ci.hpp>
 #include "IndexMap.h"
 #include "State2D.h"
 #include "interfaces/CollisionIntegral.h"
