@@ -10,13 +10,15 @@
 #include <iostream>
 #include "Grid2D.h"
 #include "Tank2D.h"
+#include "TankWithScreen2D.h"
+#include "IndexTankWithScreen2D.h"
 #include "State2D.h"
 #include "interfaces/CollisionIntegral.h"
 
 
 class Evolution2D {
 private:
-    Tank2D* geometry;
+    IndexTankWithScreen2D* geometry;
     Grid2D* grid;
 
     State2D** returningState;
@@ -27,7 +29,7 @@ private:
     CollisionIntegral<State2D>* ci;
 
 public:
-    Evolution2D(double tStep, State2D** state, Grid2D* grid, Tank2D* geometry, CollisionIntegral<State2D>* ci) :
+    Evolution2D(double tStep, State2D** state, Grid2D* grid, IndexTankWithScreen2D* geometry, CollisionIntegral<State2D>* ci) :
             returningState(state), grid(grid), geometry(geometry), tStep(tStep), ci(ci) {
         curr = *state;
         prev = new State2D(**state);
@@ -78,28 +80,26 @@ public:
         for (const auto& xIndex : prev->getSpaceIterable()) {
             const auto x = grid->getX(xIndex);
             h = 0;
-            if (geometry->isDiffuseReflection(x, {1, 0})) {
+            if (geometry->isDiffuseReflection(xIndex, {1, 0})) {
                 h = calculateDiffusionFactor(xIndex, {1, 0});
-            } else if (geometry->isDiffuseReflection(x, {-1, 0})) {
+            } else if (geometry->isDiffuseReflection(xIndex, {-1, 0})) {
                 h = calculateDiffusionFactor(xIndex, {-1, 0});
-            } else if (geometry->isDiffuseReflection(x, {0, -1})) {
+            } else if (geometry->isDiffuseReflection(xIndex, {0, -1})) {
                 h = calculateDiffusionFactor(xIndex, {0, -1});
+            } else if (geometry->isDiffuseReflection(xIndex, {0, 1})) {
+                h = calculateDiffusionFactor(xIndex, {0, 1});
             }
-
-            borderReached = geometry->isBorderReached(x);
 
             for (const auto& vIndex : prev->getVelocityIterable()) {
                 const auto v = grid->getV(vIndex);
-                vx = v[0];
-                vy = v[1];
                 int vxIndex = vIndex[0], vyIndex = vIndex[1];
 
                 if (grid->inBounds(v)) {
-                    if (geometry->isDiffuseReflection(x, v)) {
-                        value = h * exp(-(vx * vx + vy * vy) / 2);
-                    } else if (geometry->isMirrorReflection(x, v)) {
+                    if (geometry->isDiffuseReflection(xIndex, v)) {
+                        value = h * exp(-(v * v) / 2);
+                    } else if (geometry->isMirrorReflection(xIndex, v)) {
                         value = prev->getValue(xIndex[0], xIndex[1], vxIndex, - vyIndex - 1);
-                    } else if (borderReached) {
+                    } else if (geometry->isBorderReached(xIndex, v)) {
                         value = prev->getValue(xIndex[0], xIndex[1], vxIndex, vyIndex);
                     } else {
                         value = schemeChange(xIndex[0], xIndex[1], vxIndex, vyIndex);

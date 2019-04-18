@@ -43,6 +43,8 @@ target_sources(flow PRIVATE src/flow/main.cpp
         src/flow/Grid2D.cpp src/flow/Grid2D.h
         src/flow/Evolution2D.cpp src/flow/Evolution2D.h
         src/flow/Tank2D.cpp src/flow/Tank2D.h
+        src/flow/TankWithScreen2D.cpp src/flow/TankWithScreen2D.h
+        src/flow/IndexTankWithScreen2D.cpp src/flow/IndexTankWithScreen2D.h
         src/flow/Storage2D.cpp src/flow/Storage2D.h
         src/flow/IndexMap.cpp src/flow/IndexMap.h
         src/flow/DoduladCI.cpp src/flow/DoduladCI.h

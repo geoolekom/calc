@@ -2,16 +2,19 @@
 #include <fstream>
 #include <cmath>
 #include <cstring>
+#include <ctime>
 
 #include "State2D.h"
 #include "Grid2D.h"
 #include "Tank2D.h"
+#include "TankWithScreen2D.h"
+#include "IndexTankWithScreen2D.h"
 #include "Evolution2D.h"
 #include "Storage2D.h"
 #include "DoduladCI.h"
 
 
-void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
+void setInitialValues(State2D* state, Grid2D* grid, IndexTankWithScreen2D* geometry) {
     double denom = 0, value;
     doubleVector v;
 
@@ -27,7 +30,7 @@ void setInitialValues(State2D* state, Grid2D* grid, Tank2D* geometry) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
                 value = exp(- (v * v) / 2) / denom;
-                if (!geometry->isInTank(grid->getX(xIndex))) {
+                if (!geometry->isInTank(xIndex)) {
                     value /= 1e6;
                 }
             } else {
@@ -44,21 +47,24 @@ int main(int argc, char* argv[]) {
     const int step = 10;
     std::cout << "Начинаем обсчет.\n";
 
-    auto state = new State2D(100 * k + 1, 25 * k + 1, -10, 10, -10, 10);
-    auto geometry = new Tank2D(5, 5.2, 0.6, 5, 5.6, 5.8, 0.6, 20);
-    auto grid = new Grid2D(0.2 / k, 0.2 / k, 0.5, 0.5, 5);
+    auto state = new State2D(100 * k + 1, 25 * k + 1, -25, 25, -25, 25);
+    auto geometry = new IndexTankWithScreen2D(25 * k, 25 * k + 2, 4, 25 * k + 1, 40 * k, 40 * k + 2, 4, 100 * k + 1);
+    auto grid = new Grid2D(1.0 / k, 1.0 / k, 0.2, 0.2, 4.8);
     setInitialValues(state, grid, geometry);
 
-    double tStep = 2e-2 / k;
-    auto ci = new DoduladCI(tStep, grid->vxStep, state);
+    double tStep = 1e-1 / k;
+    auto ci = new CollisionIntegral<State2D>();
     auto evolution = new Evolution2D(tStep, &state, grid, geometry, ci);
     auto storage = new Storage2D(state, grid);
     std::ofstream file;
-    char filename[40];
+    char filename[40], formatString[40];
+    const auto startTime = std::time(nullptr);
 
     for (int i = 0; i < 2000; i++) {
         evolution->evolve(i);
-        std::cout << "Шаг " << i << "\n";
+        auto duration = std::time(nullptr) - startTime;
+        sprintf(formatString, "%02d:%02d\tШаг %d\n", (int) duration / 60, (int) duration % 60, i);
+        std::cout << formatString;
 
         if (i % step == 0) {
             std::cout << "Запись в файлы...\n";
@@ -67,9 +73,34 @@ int main(int argc, char* argv[]) {
             storage->exportDensity(&file);
             file.close();
 
+            sprintf(filename, "data/flow/radius_%03d.out", i);
+            file.open(filename);
+            storage->exportRadius(&file);
+            file.close();
+
+            sprintf(filename, "data/flow/mach_0_%03d.out", i);
+            file.open(filename);
+            storage->exportMachNumber(&file, 0);
+            file.close();
+
+            sprintf(filename, "data/flow/mach_4_%03d.out", i);
+            file.open(filename);
+            storage->exportMachNumber(&file, 4);
+            file.close();
+
             sprintf(filename, "data/flow/temperature_%03d.out", i);
             file.open(filename);
             storage->exportTemperature(&file);
+            file.close();
+
+            sprintf(filename, "data/flow/temperature_xx_%03d.out", i);
+            file.open(filename);
+            storage->exportTemperatureTensor(&file, {0, 0});
+            file.close();
+
+            sprintf(filename, "data/flow/temperature_yy_%03d.out", i);
+            file.open(filename);
+            storage->exportTemperatureTensor(&file, {1, 1});
             file.close();
 
             sprintf(filename, "data/flow/flow_30.out");
@@ -94,12 +125,27 @@ int main(int argc, char* argv[]) {
 
             sprintf(filename, "data/flow/function_30_3_%03d.out", i);
             file.open(filename);
-            storage->exportFunction(&file, 30 * k, 3);
+            storage->exportFunction(&file, 30 * k, 3 * k);
             file.close();
 
-            sprintf(filename, "data/flow/function_50_10_%03d.out", i);
+            sprintf(filename, "data/flow/function_30_0_%03d.out", i);
             file.open(filename);
-            storage->exportFunction(&file, 50 * k, 5);
+            storage->exportFunction(&file, 30 * k, 0);
+            file.close();
+
+            sprintf(filename, "data/flow/function_32_0_%03d.out", i);
+            file.open(filename);
+            storage->exportFunction(&file, 32 * k, 0);
+            file.close();
+
+            sprintf(filename, "data/flow/function_40_0_%03d.out", i);
+            file.open(filename);
+            storage->exportFunction(&file, 40 * k, 0);
+            file.close();
+
+            sprintf(filename, "data/flow/function_50_5_%03d.out", i);
+            file.open(filename);
+            storage->exportFunction(&file, 50 * k, 5 * k);
             file.close();
 
             sprintf(filename, "data/flow/velocity_%03d.out", i);
