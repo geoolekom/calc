@@ -20,6 +20,24 @@ public:
     Storage2D() = default;
     Storage2D(State2D* state, Grid2D* grid) : state(state), grid(grid) {};
 
+    void exportAll(std::ostream* stream) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
+            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
+                auto density = this->getDensity(xIndex, yIndex);
+                auto temperature = this->getTemperature({xIndex, yIndex});
+                auto velocity = this->getVelocity({xIndex, yIndex});
+                (*stream)
+                        << grid->getX(xIndex) << "\t"
+                        << grid->getY(yIndex) << "\t"
+                        << density << "\t"
+                        << temperature << "\t"
+                        << velocity[0] << "\t" << velocity[1] << "\t"
+                        << std::endl;
+            }
+            (*stream) << std::endl;
+        }
+    }
+
     void exportDensity(std::ostream* stream) {
         for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
             for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
@@ -111,7 +129,9 @@ public:
             for (int yIndex = 1; yIndex < state->yIndexMax; yIndex ++) {
                 auto value = this->getDensity(xIndex, yIndex);
                 if (value < axisValue * k) {
-                    (*stream) << grid->getX(xIndex) << "\t" << grid->getY(yIndex) << "\n";
+                    auto prevValue = this->getDensity(xIndex, yIndex - 1);
+                    (*stream) << grid->getX(xIndex) << "\t"
+                              << grid->getY(yIndex) - (axisValue * k - value) * grid->yStep / (prevValue - value) << "\n";
                     radiusFound = true;
                     break;
                 }

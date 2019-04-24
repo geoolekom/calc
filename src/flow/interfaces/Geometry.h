@@ -5,26 +5,21 @@
 #ifndef CALC_GEOMETRY_H
 #define CALC_GEOMETRY_H
 
-#include <array>
+#include "base.h"
 
 
-template <std::size_t dimension>
-class Geometry {
+class Geometry2D {
 public:
-    typedef std::array<int, dimension> Vector;
-    typedef std::array<std::array<int, dimension>, dimension> Matrix;
 
-    Geometry() = default;
+    Geometry2D() = default;
 
-    virtual bool isDiffuseReflection(const Vector& xIndex, const Vector& vIndex) = 0;
+    virtual bool isInTank(const intVector& xIndex) = 0;
 
-    virtual bool isMirrorReflection(const Vector& xIndex, const Vector& vIndex) = 0;
+    virtual bool isDiffuseReflection(const intVector& xIndex, const doubleVector& v) = 0;
 
-    virtual bool isBorderReached(const Vector& xIndex) = 0;
+    virtual bool isMirrorReflection(const intVector& xIndex, const doubleVector& v) = 0;
 
-    virtual Matrix getMirrorNormal(const Vector& xIndex) = 0;
-
-    virtual Vector getDiffusionMask(const Vector& xIndex) = 0;
+    virtual bool isBorderReached(const intVector& xIndex, const doubleVector& v) = 0;
 };
 
 

@@ -2,7 +2,6 @@
 // Created by geoolekom on 18.04.19.
 //
 
-#include <iostream>
 #include "interfaces/base.h"
 
 #ifndef CALC_INDEXTANKWITHSCREEN2D_H

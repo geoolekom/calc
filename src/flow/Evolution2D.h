@@ -12,6 +12,7 @@
 #include "Tank2D.h"
 #include "TankWithScreen2D.h"
 #include "IndexTankWithScreen2D.h"
+#include "IndexTankFull2D.h"
 #include "State2D.h"
 #include "interfaces/CollisionIntegral.h"
 
@@ -63,7 +64,7 @@ public:
                 multiplier = v * direction;
                 if (multiplier > 0) {
                     denom += multiplier * exp(- (v * v) / 2);
-                } else {
+                } else if (multiplier < 0) {
                     nom += multiplier * (prev->getValue(xIndex, vIndex) + prev->getValue(xIndex + direction, vIndex)) / 2.0;
                 }
             }
@@ -78,7 +79,6 @@ public:
         ci->stepForward();
 
         for (const auto& xIndex : prev->getSpaceIterable()) {
-            const auto x = grid->getX(xIndex);
             h = 0;
             if (geometry->isDiffuseReflection(xIndex, {1, 0})) {
                 h = calculateDiffusionFactor(xIndex, {1, 0});
@@ -98,13 +98,14 @@ public:
                     if (geometry->isDiffuseReflection(xIndex, v)) {
                         value = h * exp(-(v * v) / 2);
                     } else if (geometry->isMirrorReflection(xIndex, v)) {
-                        value = prev->getValue(xIndex[0], xIndex[1], vxIndex, - vyIndex - 1);
+                        int mirroredYIndex = grid->getVyIndex(- v[1]);
+                        value = prev->getValue(xIndex[0], xIndex[1], vxIndex, mirroredYIndex);
                     } else if (geometry->isBorderReached(xIndex, v)) {
-                        value = prev->getValue(xIndex[0], xIndex[1], vxIndex, vyIndex);
+                        value = prev->getValue(xIndex, vIndex);
                     } else {
-                        value = schemeChange(xIndex[0], xIndex[1], vxIndex, vyIndex);
+                        value = this->schemeChange(xIndex[0], xIndex[1], vxIndex, vyIndex);
                     }
-                    curr->setValue(xIndex[0], xIndex[1], vxIndex, vyIndex, value);
+                    curr->setValue(xIndex, vIndex, value);
                 }
             }
 
@@ -114,35 +115,38 @@ public:
     }
 
     inline double limiter(double theta) {
-        return std::max(0.0, std::min(1.0, theta));
+        return std::max(0.0, std::min(2 * theta, std::min((1.0 + theta) / 2, 2.0)));
+        // return std::max(0.0, std::min(1.0, theta));
     }
 
     inline double limitValueX(double gammaX, int xIndex, int yIndex, int vxIndex, int vyIndex) {
-        double value, thetaNom;
-        double thetaDenom = prev->getValue(xIndex + 1, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
+        double value, thetaNom, result;
+        double thetaDenom = prev->getValue(xIndex, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex - 1, yIndex, vxIndex, vyIndex);
         if (gammaX > 0) {
-            thetaNom = prev->getValue(xIndex, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex - 1, yIndex, vxIndex, vyIndex);
-            value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
-            return value + (1 - gammaX) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
+            thetaNom = prev->getValue(xIndex - 1, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex - 2, yIndex, vxIndex, vyIndex);
+            value = prev->getValue(xIndex - 1, yIndex, vxIndex, vyIndex);
+            result = value + (1 - gammaX) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
         } else {
-            thetaNom = prev->getValue(xIndex + 2, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex + 1, yIndex, vxIndex, vyIndex);
-            value = prev->getValue(xIndex + 1, yIndex, vxIndex, vyIndex);
-            return value - (1 + gammaX) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
+            thetaNom = prev->getValue(xIndex + 1, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
+            value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
+            result = value - (1 + gammaX) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
         }
+        return std::max(result, 0.);
     }
 
     inline double limitValueY(double gammaY, int xIndex, int yIndex, int vxIndex, int vyIndex) {
-        double value, thetaNom;
-        double thetaDenom = prev->getValue(xIndex, yIndex + 1, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
+        double value, thetaNom, result;
+        double thetaDenom = prev->getValue(xIndex, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex - 1, vxIndex, vyIndex);
         if (gammaY > 0) {
-            thetaNom = prev->getValue(xIndex, yIndex, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex - 1, vxIndex, vyIndex);
-            value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
-            return value + (1 - gammaY) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
+            thetaNom = prev->getValue(xIndex, yIndex - 1, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex - 2, vxIndex, vyIndex);
+            value = prev->getValue(xIndex, yIndex - 1, vxIndex, vyIndex);
+            result = value + (1 - gammaY) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
         } else {
-            thetaNom = prev->getValue(xIndex, yIndex + 2, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex + 1, vxIndex, vyIndex);
-            value = prev->getValue(xIndex, yIndex + 1, vxIndex, vyIndex);
-            return value - (1 + gammaY) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
+            thetaNom = prev->getValue(xIndex, yIndex + 1, vxIndex, vyIndex) - prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
+            value = prev->getValue(xIndex, yIndex, vxIndex, vyIndex);
+            result = value - (1 + gammaY) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
         }
+        return std::max(result, 0.);
     }
 
     double schemeChange(int xIndex, int yIndex, int vxIndex, int vyIndex) {
@@ -150,8 +154,8 @@ public:
         double gammaY = grid->getVy(vyIndex) * tStep / grid->yStep;
 
         return prev->getValue(xIndex, yIndex, vxIndex, vyIndex)
-               - gammaX * (limitValueX(gammaX, xIndex, yIndex, vxIndex, vyIndex) - limitValueX(gammaX, xIndex - 1, yIndex, vxIndex, vyIndex))
-               - gammaY * (limitValueY(gammaY, xIndex, yIndex, vxIndex, vyIndex) - limitValueY(gammaY, xIndex, yIndex - 1, vxIndex, vyIndex));
+               - gammaX * (limitValueX(gammaX, xIndex + 1, yIndex, vxIndex, vyIndex) - limitValueX(gammaX, xIndex, yIndex, vxIndex, vyIndex))
+               - gammaY * (limitValueY(gammaY, xIndex, yIndex + 1, vxIndex, vyIndex) - limitValueY(gammaY, xIndex, yIndex, vxIndex, vyIndex));
     }
 };
 

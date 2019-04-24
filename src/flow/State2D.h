@@ -17,11 +17,16 @@ public:
     int xIndexMax, yIndexMax, vxIndexMin, vxIndexMax, vyIndexMin, vyIndexMax;
 
     inline double getValue(int xIndex, int yIndex, int vxIndex, int vyIndex) {
+        if (yIndex == -1) {
+            return 2 * data[this->index(xIndex, 0, vxIndex, vyIndex)] - data[this->index(xIndex, 1, vxIndex, vyIndex)];
+        } else if (yIndex == yIndexMax) {
+            return 2 * data[this->index(xIndex, yIndexMax - 1, vxIndex, vyIndex)] - data[this->index(xIndex, yIndexMax - 2, vxIndex, vyIndex)];
+        }
         return data[this->index(xIndex, yIndex, vxIndex, vyIndex)];
     };
 
     inline double getValue(const intVector& xIndex, const intVector& vIndex) {
-        return data[this->index(xIndex[0], xIndex[1], vIndex[0], vIndex[1])];
+        return this->getValue(xIndex[0], xIndex[1], vIndex[0], vIndex[1]);
     }
 
     inline void setValue(int xIndex, int yIndex, int vxIndex, int vyIndex, double value) {

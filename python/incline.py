@@ -1,15 +1,25 @@
 import os
 import scipy
+from scipy import stats
 
-COUNT = 1000
-DATA_DIR = 'data/18.04.19/flow 1 thin'
+COUNT = 2000
+DATA_DIR = 'data/23.04.19/6/flow'
 
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 datadir = os.path.join(current_dir, DATA_DIR)
 
+left = 26
+right = 50
+
+out_data = []
 for i in range(0, COUNT, 10):
     filename = os.path.join(datadir, 'radius_{0:03d}.out'.format(i))
     data = scipy.genfromtxt(filename, delimiter="\t")
-    x, y = data[:, 0][62:102], data[:, 1][62:102]
-    fp, residuals, rank, sv, rcond = scipy.polyfit(x, y, 1, full=True)
-    print(i, fp[0], sep='\t')
+    x, y = data[:, 0][left:right], data[:, 1][left:right]
+
+    a, _, _, _, err = stats.linregress(x, y)
+    out_data.append([i, a, err])
+
+
+out_filename = os.path.join(datadir, 'incline.out')
+scipy.savetxt(out_filename, out_data, delimiter='\t', fmt='%f')

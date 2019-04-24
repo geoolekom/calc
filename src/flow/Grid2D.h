@@ -5,13 +5,13 @@
 #ifndef CALC_GRID2D_H
 #define CALC_GRID2D_H
 
-#include <array>
 #include "interfaces/base.h"
 
 class Grid2D {
 public:
     double xStep, yStep, vxStep, vyStep;
     double vLimitSqr;
+    double shift = 0.5;
 
     Grid2D(double xStep, double yStep, double vxStep, double vyStep, double vLimit) :
             xStep(xStep), yStep(yStep), vxStep(vxStep), vyStep(vyStep), vLimitSqr(vLimit * vLimit) {};
@@ -27,31 +27,32 @@ public:
     }
 
     inline double getVx(int vxIndex) {
-        return (vxIndex + 0.5) * vxStep;
+        return (vxIndex + shift) * vxStep;
     }
 
     inline double getVy(int vyIndex) {
-        return (vyIndex + 0.5) * vyStep;
+        return (vyIndex + shift) * vyStep;
     }
 
-    inline int getXIndex(double x) {
-        return int (x / xStep);
-    }
-
-    inline int getYIndex(double y) {
-        return int (y / yStep);
+    inline int getVyIndex(double vy) {
+        if (vy > 0) {
+            return int (vy / vyStep);
+        } else {
+            return int (vy / vyStep - 2 * shift);
+        }
     }
 
     inline bool inBounds(const doubleVector& v) {
-        return v[0] * v[0] + v[1] * v[1] < vLimitSqr;
+        const auto len = v * v;
+        return len < vLimitSqr && len > 0;
     }
 
     doubleVector getV(const intVector& index) {
-        return { vxStep * (index[0] + 0.5), vxStep * (index[1] + 0.5) };
+        return { this->getVx(index[0]), this->getVy(index[1]) };
     }
 
     doubleVector getX(const intVector& index) {
-        return { xStep * index[0], yStep * index[1] };
+        return { this->getX(index[0]), this->getY(index[1]) };
     }
 };
 
