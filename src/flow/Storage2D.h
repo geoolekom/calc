@@ -9,8 +9,8 @@
 #include <ostream>
 #include <iostream>
 #include <cmath>
-#include "State2D.h"
-#include "Grid2D.h"
+#include "State2D.cu"
+#include "Grid2D.cu"
 
 class Storage2D {
 private:
@@ -152,7 +152,7 @@ public:
 
 
     double getDensity(int xIndex, int yIndex) {
-        double value = 0, vx, vy;
+        double value = 0;
         doubleVector v;
         for (const auto& vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
@@ -210,7 +210,7 @@ public:
 
     doubleVector getVelocity(const intVector& xIndex) {
         doubleVector v, vAvg = {0, 0};
-        double nom = 0, denom = 0, vx, vy, vxAvg = 0, vyAvg = 0;
+        double denom = 0;
         for (const auto& vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {

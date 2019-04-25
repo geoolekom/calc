@@ -2,6 +2,7 @@
 // Created by geoolekom on 18.04.19.
 //
 
+#include <host_defines.h>
 #include "interfaces/base.h"
 
 #ifndef CALC_INDEXTANKWITHSCREEN2D_H
@@ -22,7 +23,7 @@ public:
             ceilingY (ceilingY), screenLeftX (screenLeftX), screenRightX (screenRightX), screenY (screenY),
             endX (endX) {};
 
-    bool isDiffuseReflection(const intVector& x, const doubleVector& v) {
+    __device__ bool isDiffuseReflection(const intVector& x, const doubleVector& v) {
         bool value = false;
         if ((x[0] == 0) ||
             (x[0] == wallLeftX && x[1] >= wallY) ||
@@ -53,11 +54,11 @@ public:
         return value;
     }
 
-    bool isMirrorReflection(const intVector& x, const doubleVector& v) {
+    __device__ bool isMirrorReflection(const intVector& x, const doubleVector& v) {
         return x[1] == 0 && v[1] > 0;
     }
 
-    bool isBorderReached(const intVector& x, const doubleVector& v) {
+    __device__ bool isBorderReached(const intVector& x, const doubleVector& v) {
         return (((x[0] >= wallRightX && x[0] < screenLeftX) || x[0] >= screenRightX) && x[1] == ceilingY - 1 && v[1] < 0) ||
                 (x[0] == endX - 1 && v[0] < 0);
     }

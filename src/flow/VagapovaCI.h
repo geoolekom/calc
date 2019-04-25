@@ -8,7 +8,7 @@
 #include <vector>
 #include <iterator>
 #include "vagapova_ci/Relaxation.h"
-#include "State2D.h"
+#include "State2D.cu"
 #include "interfaces/CollisionIntegral.h"
 
 

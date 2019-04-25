@@ -8,7 +8,7 @@
 
 #include <dodulad_ci/ci.hpp>
 #include "IndexMap.h"
-#include "State2D.h"
+#include "State2D.cu"
 #include "interfaces/CollisionIntegral.h"
 
 #define KOROBOV_GRID_PARAMETER 50000
@@ -31,13 +31,14 @@ public:
         delete speedIndexMap;
     }
 
-    void stepForward() override {
-        ci::gen(tStep, KOROBOV_GRID_PARAMETER, vGridRadius, vGridRadius,
-                *speedIndexMap, *speedIndexMap, vStep, particleMass, particleMass, particle, particle);
+    __device__ void stepForward() override {
+//        ci::gen(tStep, KOROBOV_GRID_PARAMETER, vGridRadius, vGridRadius,
+//                *speedIndexMap, *speedIndexMap, vStep, particleMass, particleMass, particle, particle);
     };
-    void calculateIntegral(State2D* state, int xIndex, int yIndex) override {
+
+    __device__ void calculateIntegral(State2D* state, int xIndex, int yIndex) override {
         auto slice = state->velocitySlice(xIndex, yIndex);
-        ci::iter(slice, slice);
+//        ci::iter(slice, slice);
     };
 };
 

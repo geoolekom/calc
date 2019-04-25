@@ -4,13 +4,13 @@
 #include <cstring>
 #include <ctime>
 
-#include "State2D.h"
-#include "Grid2D.h"
+#include "State2D.cu"
+#include "Grid2D.cu"
 #include "Tank2D.h"
 #include "TankWithScreen2D.h"
-#include "IndexTankWithScreen2D.h"
+#include "IndexTankWithScreen2D.cu"
 #include "IndexTankFull2D.h"
-#include "Evolution2D.h"
+#include "Evolution2D.cu"
 #include "Storage2D.h"
 #include "DoduladCI.h"
 
@@ -65,8 +65,9 @@ int main(int argc, char* argv[]) {
     char filename[40], formatString[40];
     const auto startTime = std::time(nullptr);
 
+    evolution->cudaInit();
     for (int i = 0; i < 6000; i++) {
-        evolution->evolve(i);
+
         auto duration = std::time(nullptr) - startTime;
         sprintf(formatString, "%02d:%02d\tШаг %d\n", (int) duration / 60, (int) duration % 60, i);
         std::cout << formatString;

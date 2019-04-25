@@ -2,6 +2,8 @@
 #define CALC_STATE2D_H
 
 #include <vector>
+#include <host_defines.h>
+#include <cuda_runtime_api.h>
 #include "interfaces/base.h"
 
 
@@ -12,11 +14,10 @@ private:
     double* data;
     iterable spaceIterable, velocityIterable;
 public:
-
     int nvx, nvy, nx, ny;
     int xIndexMax, yIndexMax, vxIndexMin, vxIndexMax, vyIndexMin, vyIndexMax;
 
-    inline double getValue(int xIndex, int yIndex, int vxIndex, int vyIndex) {
+    __host__ __device__ inline double getValue(int xIndex, int yIndex, int vxIndex, int vyIndex) {
         if (yIndex == -1) {
             return 2 * data[this->index(xIndex, 0, vxIndex, vyIndex)] - data[this->index(xIndex, 1, vxIndex, vyIndex)];
         } else if (yIndex == yIndexMax) {
@@ -25,15 +26,15 @@ public:
         return data[this->index(xIndex, yIndex, vxIndex, vyIndex)];
     };
 
-    inline double getValue(const intVector& xIndex, const intVector& vIndex) {
+    __host__ __device__ inline double getValue(const intVector& xIndex, const intVector& vIndex) {
         return this->getValue(xIndex[0], xIndex[1], vIndex[0], vIndex[1]);
     }
 
-    inline void setValue(int xIndex, int yIndex, int vxIndex, int vyIndex, double value) {
+    __host__ __device__ void setValue(int xIndex, int yIndex, int vxIndex, int vyIndex, double value) {
         data[this->index(xIndex, yIndex, vxIndex, vyIndex)] = value;
     };
 
-    inline void setValue(const intVector& xIndex, const intVector& vIndex, double value) {
+    __host__ __device__ void setValue(const intVector& xIndex, const intVector& vIndex, double value) {
         data[this->index(xIndex[0], xIndex[1], vIndex[0], vIndex[1])] = value;
     };
 
@@ -45,7 +46,6 @@ public:
         this->ny = yIndexMax;
         this->nvx = vxIndexMax - vxIndexMin;
         this->nvy = vyIndexMax - vyIndexMin;
-        this->data = new double[nx * ny * nvx * nvy]();
 
         for (int yIndex = 0; yIndex < this->yIndexMax; yIndex ++) {
             for (int xIndex = 0; xIndex < this->xIndexMax; xIndex++) {
@@ -60,21 +60,27 @@ public:
         }
     }
 
+    void allocate() {
+        this->data = new double[nx * ny * nvx * nvy]();
+    }
+
+    void free() {
+        delete[] this->data;
+    }
+
     State2D(const State2D& state) : State2D(state.xIndexMax, state.yIndexMax,
             state.vxIndexMin, state.vxIndexMax, state.vyIndexMin, state.vyIndexMax) {}
 
-    ~State2D() {
-        delete this->data;
-    };
+    ~State2D() {};
 
-    inline int index(int xIndex, int yIndex, int vxIndex, int vyIndex) {
+    __host__ __device__ inline int index(int xIndex, int yIndex, int vxIndex, int vyIndex) {
         return (vxIndex + nvx) % nvx
             + ((vyIndex + nvy) % nvy) * nvx
             + ((xIndex + nx) % nx) * nvx * nvy
             + ((yIndex + ny) % ny) * nvx * nvy * nx;
     }
 
-    inline double* velocitySlice(int xIndex, int yIndex) {
+    __device__ inline double* velocitySlice(int xIndex, int yIndex) {
         return data + nvx * nvy * (yIndex + xIndex * ny);
     }
 
@@ -85,6 +91,14 @@ public:
     const iterable& getVelocityIterable() {
         return this->velocityIterable;
     }
+
+    void setData(double* data) {
+        cudaMemcpy(&(this->data), &data, sizeof(double*), cudaMemcpyHostToDevice);
+    }
+
+    double* getData() { return this->data; }
+
+    int getSize() { return nx * ny * nvx * nvy; }
 
 };
 

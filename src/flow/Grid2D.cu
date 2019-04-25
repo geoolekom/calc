@@ -5,6 +5,7 @@
 #ifndef CALC_GRID2D_H
 #define CALC_GRID2D_H
 
+#include <host_defines.h>
 #include "interfaces/base.h"
 
 class Grid2D {
@@ -18,23 +19,23 @@ public:
 
     ~Grid2D() = default;
 
-    inline double getX(int xIndex) {
+    __host__ __device__ inline double getX(int xIndex) {
         return xIndex * xStep;
     }
 
-    inline double getY(int yIndex) {
+    __host__ __device__ inline double getY(int yIndex) {
         return yIndex * yStep;
     }
 
-    inline double getVx(int vxIndex) {
+    __host__ __device__ inline double getVx(int vxIndex) {
         return (vxIndex + shift) * vxStep;
     }
 
-    inline double getVy(int vyIndex) {
+    __host__ __device__ inline double getVy(int vyIndex) {
         return (vyIndex + shift) * vyStep;
     }
 
-    inline int getVyIndex(double vy) {
+    __device__ inline int getVyIndex(double vy) {
         if (vy > 0) {
             return int (vy / vyStep);
         } else {
@@ -42,16 +43,16 @@ public:
         }
     }
 
-    inline bool inBounds(const doubleVector& v) {
+    __host__ __device__ inline bool inBounds(const doubleVector& v) {
         const auto len = v * v;
         return len < vLimitSqr && len > 0;
     }
 
-    doubleVector getV(const intVector& index) {
+    __host__ __device__ doubleVector getV(const intVector& index) {
         return { this->getVx(index[0]), this->getVy(index[1]) };
     }
 
-    doubleVector getX(const intVector& index) {
+    __host__ __device__ doubleVector getX(const intVector& index) {
         return { this->getX(index[0]), this->getY(index[1]) };
     }
 };

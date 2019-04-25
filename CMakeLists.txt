@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.5)
 
 project(calc
         VERSION 0.1.0
-        LANGUAGES CXX)
+        LANGUAGES CXX CUDA)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
 set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
+set(CMAKE_CUDA_FLAGS "-std=c++11 -O3 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES --expt-relaxed-constexpr")
 
 set(SCHEMES_SRC src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
 add_executable(schemes ${SCHEMES_SRC})
@@ -36,15 +37,16 @@ target_sources(dodulad_ci PRIVATE
         libs/dodulad_ci/sse.hpp libs/dodulad_ci/sse.hpp libs/dodulad_ci/sse_impl.hpp libs/dodulad_ci/v.hpp)
 
 add_executable(flow)
-target_link_libraries(flow dodulad_ci range-v3)
-target_sources(flow PRIVATE src/flow/main.cpp
+set_target_properties(flow PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(flow dodulad_ci)
+target_sources(flow PRIVATE src/flow/main.cu
         src/flow/interfaces/base.h
-        src/flow/State2D.cpp src/flow/State2D.h
-        src/flow/Grid2D.cpp src/flow/Grid2D.h
-        src/flow/Evolution2D.cpp src/flow/Evolution2D.h
+        src/flow/State2D.cpp src/flow/State2D.cu
+        src/flow/Grid2D.cpp src/flow/Grid2D.cu
+        src/flow/Evolution2D.cpp src/flow/Evolution2D.cu
         src/flow/Tank2D.cpp src/flow/Tank2D.h
         src/flow/TankWithScreen2D.cpp src/flow/TankWithScreen2D.h
-        src/flow/IndexTankWithScreen2D.cpp src/flow/IndexTankWithScreen2D.h
+        src/flow/IndexTankWithScreen2D.cpp src/flow/IndexTankWithScreen2D.cu
         src/flow/IndexTankFull2D.cpp src/flow/IndexTankFull2D.h
         src/flow/Storage2D.cpp src/flow/Storage2D.h
         src/flow/IndexMap.cpp src/flow/IndexMap.h
@@ -58,3 +60,7 @@ set(TEST_SRC
         src/flow/interfaces/CollisionIntegral.h src/flow/interfaces/Space.h
         src/flow/interfaces/Grid.h src/flow/interfaces/Storage.h)
 add_executable(test ${TEST_SRC})
+
+add_executable(cuda_test)
+set_target_properties(cuda_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_sources(cuda_test PRIVATE src/flow/test.cu)
