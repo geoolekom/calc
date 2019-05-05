@@ -11,8 +11,8 @@ template <typename State>
 class CollisionIntegral {
 public:
     CollisionIntegral() = default;
-    __device__ virtual void stepForward() {};
-    __device__ virtual void calculateIntegral(State* state, int xIndex, int yIndex) {};
+    virtual void stepForward() {};
+    __device__ virtual void calculateIntegral(double* slice) {};
 };
 
 #endif //CALC_COLLISIONINTEGRAL_H

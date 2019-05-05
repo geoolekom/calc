@@ -3,7 +3,8 @@
 //
 
 #include <host_defines.h>
-#include "interfaces/base.h"
+#include "interfaces/Geometry.h"
+#include "interfaces/base3D.h"
 
 #ifndef CALC_INDEXTANKWITHSCREEN2D_H
 #define CALC_INDEXTANKWITHSCREEN2D_H
@@ -63,7 +64,7 @@ public:
                 (x[0] == endX - 1 && v[0] < 0);
     }
 
-    bool isInTank(const intVector& x) {
+    __host__ __device__ bool isInTank(const intVector& x) {
         return x[0] < wallLeftX;
     }
 };

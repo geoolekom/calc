@@ -9,7 +9,7 @@
 
 #include <cmath>
 #include <iostream>
-#include "interfaces/base.h"
+#include "interfaces/base2D.h"
 
 class Tank2D {
 private:

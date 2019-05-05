@@ -5,21 +5,22 @@
 #ifndef CALC_GEOMETRY_H
 #define CALC_GEOMETRY_H
 
-#include "base.h"
+#include "base3D.h"
 
 
-class Geometry2D {
+class Geometry3D {
 public:
 
-    Geometry2D() = default;
+    Geometry3D() = default;
+    ~Geometry3D() = default;
 
-    virtual bool isInTank(const intVector& xIndex) = 0;
+    virtual __host__ __device__ bool isInTank(const intVector& xIndex) { return false; };
 
-    virtual bool isDiffuseReflection(const intVector& xIndex, const doubleVector& v) = 0;
+    virtual __device__ bool isDiffuseReflection(const intVector& xIndex, const doubleVector& v) { printf("VIRTUAL\n"); return false; };
 
-    virtual bool isMirrorReflection(const intVector& xIndex, const doubleVector& v) = 0;
+    virtual __device__ bool isMirrorReflection(const intVector& xIndex, const doubleVector& v) { return false; };
 
-    virtual bool isBorderReached(const intVector& xIndex, const doubleVector& v) = 0;
+    virtual __device__ bool isBorderReached(const intVector& xIndex, const doubleVector& v) { return true; };
 };
 
 

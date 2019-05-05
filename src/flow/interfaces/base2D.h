@@ -2,8 +2,8 @@
 // Created by geoolekom on 12.03.19.
 //
 
-#ifndef CALC_BASE_H
-#define CALC_BASE_H
+#ifndef CALC_BASE2D_H
+#define CALC_BASE2D_H
 
 #include <host_defines.h>
 #include <array>
@@ -36,4 +36,4 @@ __host__ __device__ doubleVector operator/(const std::array<T, 2>& v, double k) 
     return { v[0] / k, v[1] / k };
 }
 
-#endif //CALC_BASE_H
+#endif //CALC_BASE2D_H

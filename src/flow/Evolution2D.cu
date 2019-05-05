@@ -19,7 +19,6 @@
 
 
 class Evolution2D {
-    friend class State2D;
 public:
     IndexTankWithScreen2D* geometry;
     Grid2D* grid;

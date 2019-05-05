@@ -5,7 +5,7 @@ project(calc
         LANGUAGES CXX CUDA)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
 set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
-set(CMAKE_CUDA_FLAGS "-std=c++11 -O3 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES --expt-relaxed-constexpr")
+set(CMAKE_CUDA_FLAGS "-std=c++11 -O3 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES --expt-relaxed-constexpr -lineinfo -arch=sm_30")
 
 set(SCHEMES_SRC src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
 add_executable(schemes ${SCHEMES_SRC})
@@ -30,28 +30,31 @@ target_sources(range-v3 PRIVATE libs/ranges/include/range/v3/all.hpp)
 
 # Dodulad CI library
 add_library(dodulad_ci STATIC "")
+set_target_properties(dodulad_ci PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_sources(dodulad_ci PRIVATE
         libs/dodulad_ci/ci.hpp
-        libs/dodulad_ci/ci.cpp libs/dodulad_ci/ci_impl.hpp
+        libs/dodulad_ci/ci.cpp libs/dodulad_ci/ci_impl.hpp libs/dodulad_ci/ci_impl.cu
         libs/dodulad_ci/korobov.hpp
-        libs/dodulad_ci/sse.hpp libs/dodulad_ci/sse.hpp libs/dodulad_ci/sse_impl.hpp libs/dodulad_ci/v.hpp)
+        libs/dodulad_ci/sse.hpp
+        libs/dodulad_ci/sse.hpp libs/dodulad_ci/sse_impl.hpp
+        libs/dodulad_ci/v.hpp)
 
 add_executable(flow)
 set_target_properties(flow PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(flow dodulad_ci)
-target_sources(flow PRIVATE src/flow/main.cu
-        src/flow/interfaces/base.h
-        src/flow/State2D.cpp src/flow/State2D.cu
-        src/flow/Grid2D.cpp src/flow/Grid2D.cu
-        src/flow/Evolution2D.cpp src/flow/Evolution2D.cu
-        src/flow/Tank2D.cpp src/flow/Tank2D.h
-        src/flow/TankWithScreen2D.cpp src/flow/TankWithScreen2D.h
+target_sources(flow PRIVATE
+        src/flow/main.cu
+        src/flow/utils/cuda.h
+
+        src/flow/interfaces/base3D.h
+        src/flow/State3D.h src/flow/State3D.cu
+        src/flow/Grid3D.h src/flow/Grid3D.cu
         src/flow/IndexTankWithScreen2D.cpp src/flow/IndexTankWithScreen2D.cu
-        src/flow/IndexTankFull2D.cpp src/flow/IndexTankFull2D.h
+        src/flow/Evolution3D.h src/flow/Evolution3D.cu
         src/flow/Storage2D.cpp src/flow/Storage2D.h
-        src/flow/IndexMap.cpp src/flow/IndexMap.h
-        src/flow/DoduladCI.cpp src/flow/DoduladCI.h
-        src/flow/VagapovaCI.h src/flow/VagapovaCI.h
+
+        src/flow/DoduladCI.cu src/flow/DoduladCI.h
+#        src/flow/VagapovaCI.h src/flow/VagapovaCI.h
         src/flow/interfaces/CollisionIntegral.h)
 
 set(TEST_SRC

@@ -4,7 +4,7 @@
 
 #include <cmath>
 #include <iostream>
-#include "interfaces/base.h"
+#include "interfaces/base2D.h"
 
 #ifndef CALC_TANKWITHSCREEN2D_H
 #define CALC_TANKWITHSCREEN2D_H

@@ -4,7 +4,7 @@
 #include <vector>
 #include <host_defines.h>
 #include <cuda_runtime_api.h>
-#include "interfaces/base.h"
+#include "interfaces/base2D.h"
 
 
 class State2D {

@@ -1,7 +1,7 @@
 //
 // Created by geoolekom on 22.04.19.
 //
-#include "interfaces/base.h"
+#include "interfaces/base2D.h"
 
 #ifndef CALC_INDEXTANKFULL2D_H
 #define CALC_INDEXTANKFULL2D_H

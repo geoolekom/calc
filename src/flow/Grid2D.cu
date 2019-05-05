@@ -6,7 +6,7 @@
 #define CALC_GRID2D_H
 
 #include <host_defines.h>
-#include "interfaces/base.h"
+#include "interfaces/base2D.h"
 
 class Grid2D {
 public:
