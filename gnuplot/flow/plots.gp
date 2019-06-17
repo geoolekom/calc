@@ -1,13 +1,14 @@
-set term pngcairo size 1500, 800
+set term pngcairo size 1200, 700
 set grid xtics lc rgb "#bbbbbb" lw 1 lt 0
 set grid ytics lc rgb "#bbbbbb" lw 1 lt 0
 
-data_dir = 'data/flow'
-output_dir = 'data'
-n = 600
+data_dir = 'data/06.05.19/8/flow'
+output_dir = 'data/06.05.19/8'
+n = 1500
 
 # Поток через щель
 
+set xrange [0:2000]
 set xlabel "t"
 set ylabel "Ф"
 
@@ -16,8 +17,21 @@ set output sprintf("%s/%s.png", output_dir, quantity)
 filename = sprintf("%s/%s.out", data_dir, quantity)
 plot filename title ""
 
+# dФ/Ф
+
+set yrange [-0.004:0.004]
+set xlabel "t"
+set ylabel "{/Symbol d}Ф/Ф"
+
+quantity = 'flow_diff_avg'
+set output sprintf("%s/%s.png", output_dir, quantity)
+filename = sprintf("%s/%s.out", data_dir, quantity)
+plot filename title ""
+
 # Полуширина струи
 
+unset yrange
+set xrange [0:100]
 set xlabel "x"
 set ylabel "R"
 
@@ -38,6 +52,7 @@ plot filename title ""
 
 # Контуры
 
+set term pngcairo size 1500, 800
 unset surface
 set view map
 set key outside
@@ -58,7 +73,7 @@ set ylabel "Y"
 quantity = 'density'
 set xrange [25:75]
 set yrange [0:25]
-set cntrparam levels incremental 0,0.01,0.2
+set cntrparam levels incremental 0.04,0.02,1
 set output sprintf("%s/%s_contours.png", output_dir, quantity)
 filename = sprintf("%s/data_%03d.out", data_dir, n)
 splot filename using 1:2:3 with lines title ""
@@ -66,7 +81,7 @@ splot filename using 1:2:3 with lines title ""
 quantity = 'temperature'
 set xrange [25:75]
 set yrange [0:25]
-set cntrparam levels incremental 0,0.05,1.5
+set cntrparam levels incremental 0.5,0.1,2
 set output sprintf("%s/%s_contours.png", output_dir, quantity)
 filename = sprintf("%s/data_%03d.out", data_dir, n)
 splot filename using 1:2:4 with lines title ""
@@ -74,7 +89,7 @@ splot filename using 1:2:4 with lines title ""
 quantity = 'pressure'
 set xrange [25:75]
 set yrange [0:25]
-set cntrparam levels incremental 0,0.01,0.3
+set cntrparam levels incremental 0.04,0.02,2
 set output sprintf("%s/%s_contours.png", output_dir, quantity)
 filename = sprintf("%s/data_%03d.out", data_dir, n)
 splot filename using 1:2:($3 * $4) with lines title ""

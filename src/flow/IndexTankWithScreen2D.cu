@@ -64,6 +64,10 @@ public:
                 (x[0] == endX - 1 && v[0] < 0);
     }
 
+    __device__ bool isFreeFlow(const intVector& x, const doubleVector& v) {
+        return !(this->isDiffuseReflection(x, v) || this->isMirrorReflection(x, v) || this->isBorderReached(x, v));
+    }
+
     __host__ __device__ bool isInTank(const intVector& x) {
         return x[0] < wallLeftX;
     }

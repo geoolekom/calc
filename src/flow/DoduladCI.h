@@ -32,7 +32,7 @@ public:
     void generateGrid();
     void finalizeGrid();
 
-    __device__ void calculateIntegral(double* slice);
+    __device__ void calculateIntegral(floatType* slice);
 };
 
 

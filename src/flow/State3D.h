@@ -9,7 +9,7 @@ class State3D {
 private:
     typedef std::vector<intVector> iterable;
 
-    double* data;
+    floatType* data;
     iterable spaceIterable, velocityIterable;
 public:
     const int xIndexMax, yIndexMax, zIndexMax;
@@ -21,11 +21,11 @@ public:
     State3D(const State3D& state);
     ~State3D() = default;
 
-    int getSize() const;
+    size_t getSize() const;
 
-    double* getData() const;
-    void setData(double* data);
-    void cudaSetData(double* data);
+    floatType* getData() const;
+    void setData(floatType* data);
+    void cudaSetData(floatType* data);
 
     void allocate();
     void cudaAllocate();
@@ -36,7 +36,7 @@ public:
     __host__ __device__ int index(const intVector &x, const intVector &v) const;
     __host__ __device__ double getValue(const intVector &x, const intVector &v) const;
     __host__ __device__ void setValue(const intVector &x, const intVector &v, double value);
-    __device__ double* getVelocitySlice(const intVector &x);
+    __device__ floatType* getVelocitySlice(const intVector &x);
 
     const iterable& getSpaceIterable();
     const iterable& getVelocityIterable();

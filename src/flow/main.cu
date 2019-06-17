@@ -29,14 +29,10 @@ void setInitialValues(State3D* state, Grid3D* grid, IndexTankWithScreen2D* geome
 
     for (const auto& xIndex : state->getSpaceIterable()) {
         for (const auto& vIndex : state->getVelocityIterable()) {
-            if (grid->inBounds(vIndex)) {
-                v = grid->getV(vIndex);
-                value = exp(- (v * v) / 2) / denom;
-                if (!geometry->isInTank(xIndex)) {
-                    value /= 1e6;
-                }
-            } else {
-                value = 0;
+            v = grid->getV(vIndex);
+            value = exp(- (v * v) / 2) / denom;
+            if (!geometry->isInTank(xIndex)) {
+                value /= 1e8;
             }
             state->setValue(xIndex, vIndex, value);
         }
@@ -54,15 +50,16 @@ __global__ void evolve(Evolution3D* e, int step) {
 
 
 int main(int argc, char* argv[]) {
+    char dataDir[] = "data/06.05.19/9/flow";
     const int k = 1;
     const int step = 10 * k;
 
-    int vRadius = 15;
+    int vRadius = 48;
     double vMax = 4.80;
-    double tStep = 0.1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
+    double tStep = 1e-1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
 
     int height = 25 * k, length = 100 * k;
-    int wallY = 5 * k, screenY = 5 * k;
+    int wallY = 7 * k, screenY = 7 * k;
     int wallLeftX = 25 * k, wallRightX = wallLeftX + 2;
     int screenLeftX = 25 * k, screenRightX = screenLeftX + 2;
 
@@ -73,7 +70,7 @@ int main(int argc, char* argv[]) {
     cudaCopy(&geometry, &tempGeometry);
 
     Grid3D* grid;
-    auto tempGrid = Grid3D({xStep, xStep, xStep}, {vStep, vStep, vStep}, vMax);
+    auto tempGrid = Grid3D({xStep, xStep, xStep}, {vStep, vStep, vMax}, vMax);
     cudaCopy(&grid, &tempGrid);
 
 //    State3D* state;
@@ -81,7 +78,7 @@ int main(int argc, char* argv[]) {
 //    cudaCopy(&state, &tempState);
 //    state->cudaAllocate();
 
-    State3D* state = new State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
+    State3D* state = new State3D({length, height, 1}, {-vRadius, -vRadius, -1}, {vRadius, vRadius, 1});
     state->allocate();
 
     setInitialValues(state, grid, geometry);
@@ -96,7 +93,7 @@ int main(int argc, char* argv[]) {
 
     auto storage = new Storage2D(state, grid);
     std::ofstream file;
-    char filename[40];
+    char filename[100];
     const auto startTime = std::time(nullptr);
 
     size_t available, total;
@@ -121,17 +118,17 @@ int main(int argc, char* argv[]) {
             evolution->exportToHost();
             std::cout << "Запись в файлы...\n";
 
-            sprintf(filename, "data/flow/data_%03d.out", i);
+            sprintf(filename, "%s/data_%03d.out", dataDir, i);
             file.open(filename);
             storage->exportAll(&file);
             file.close();
 
-            sprintf(filename, "data/flow/radius_%03d.out", i);
+            sprintf(filename, "%s/radius_%03d.out", dataDir, i);
             file.open(filename);
             storage->exportRadius(&file);
             file.close();
 
-            sprintf(filename, "data/flow/mach_0_%03d.out", i);
+            sprintf(filename, "%s/mach_0_%03d.out", dataDir, i);
             file.open(filename);
             storage->exportMachNumber(&file, 0);
             file.close();
@@ -146,17 +143,17 @@ int main(int argc, char* argv[]) {
 //            storage->exportTemperatureTensor(&file, {1, 1});
 //            file.close();
 
-            sprintf(filename, "data/flow/flow.out");
+            sprintf(filename, "%s/flow.out", dataDir);
             file.open(filename, std::ofstream::app);
             storage->exportFlowX(&file, i, screenRightX, screenY);
             file.close();
 
-            sprintf(filename, "data/flow/function_screen_0_%03d.out", i);
+            sprintf(filename, "%s/function_screen_0_%03d.out", dataDir, i);
             file.open(filename);
             storage->exportFunction(&file, screenRightX, 0);
             file.close();
 
-            sprintf(filename, "data/flow/function_screen_10_0_%03d.out", i);
+            sprintf(filename, "%s/function_screen_10_0_%03d.out", dataDir, i);
             file.open(filename);
             storage->exportFunction(&file, screenRightX + 10 * k, 0);
             file.close();

@@ -2,14 +2,14 @@ import os
 import scipy
 from scipy import stats
 
-COUNT = 2000
-DATA_DIR = 'data/23.04.19/6/flow'
+COUNT = 2400
+DATA_DIR = 'data/06.05.19/8/flow'
 
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 datadir = os.path.join(current_dir, DATA_DIR)
 
-left = 26
-right = 50
+left = 34
+right = 45
 
 out_data = []
 for i in range(0, COUNT, 10):

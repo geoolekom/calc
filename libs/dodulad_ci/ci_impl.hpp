@@ -79,7 +79,8 @@ namespace ci {
 
 		// основное выкидывание из-за того, что разлетные скорости больше скорости обрезания
 		if ( out_of_sphere_r(wxi1, nk_rad1) || out_of_sphere_r(wxi2, nk_rad2) ) {
-			ss[2]++; return;
+			ss[2]++;
+			return;
 		}
 		// (II) подгонка разлетных скоростей к узлам сетки					
 				
@@ -116,15 +117,20 @@ namespace ci {
 								double q1 = (1-r)*ql + r*qm;
 								if (q1 < q) {
 									q = q1;
-									El = el; Em = em;
-									xi2l = *pl; xi2m = *pm;
+									El = el;
+									Em = em;
+									xi2l = *pl;
+									xi2m = *pm;
 									boo = true;
 								}
 							}
 						}
 			}
 
-		if (!boo) {	ss[4]++; return; }
+		if (!boo) {
+			ss[4]++;
+			return;
+		}
 
 		double r = (E0-El)/(Em-El);
 
@@ -132,11 +138,11 @@ namespace ci {
 		V3i xi1m = xi1 + xi2 - xi2m;
 
 		if ( ( (xi1 == xi1l) && (xi2 == xi2l) ) || ( (xi1 == xi1m) && (xi2 == xi2m) ) ) {
-			ss[7]++; return;
+			ss[7]++;
+			return;
 		}
 
-		if (out_of_sphere_i(xi1l, nk_rad1) || out_of_sphere_i(xi1m, nk_rad1)  ||
-				out_of_sphere_i(xi2l, nk_rad2) || out_of_sphere_i(xi2m, nk_rad2)) {
+		if (out_of_sphere_i(xi1l, nk_rad1) || out_of_sphere_i(xi1m, nk_rad1) || out_of_sphere_i(xi2l, nk_rad2) || out_of_sphere_i(xi2m, nk_rad2)) {
 			ss[6]++;
 			return;
 		}
@@ -200,7 +206,13 @@ namespace ci {
 			double b2 =	point[8];
 			double e =	point[9] * 2 * M_PI;
 
-			calc_int_node(xi1, xi2, b2, e, nk_rad1, nk_rad2, xyz2i1, xyz2i2, m1, m2, a, p1, p2);	
+//			auto index1 = xyz2i1[xi1[0]][xi1[1]][xi1[2]];
+//			auto index2 = xyz2i2[xi2[0]][xi2[1]][xi2[2]];
+//
+//			if (index1 > 0 && index2 > 0) {
+//				calc_int_node(xi1, xi2, b2, e, nk_rad1, nk_rad2, xyz2i1, xyz2i2, m1, m2, a, p1, p2);
+//			}
+			calc_int_node(xi1, xi2, b2, e, nk_rad1, nk_rad2, xyz2i1, xyz2i2, m1, m2, a, p1, p2);
 		}
 
 //		std::cout << "n_calc = " << nc.size() << " N_nu = " << N_nu << std::endl;

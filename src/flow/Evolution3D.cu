@@ -11,13 +11,13 @@ Evolution3D::Evolution3D(double tStep, State3D *state, Grid3D *grid, IndexTankWi
 
     cudaMallocManaged((void**) &curr, sizeof(State3D), cudaMemAttachGlobal);
     cudaMemcpy(curr, state, sizeof(State3D), cudaMemcpyHostToDevice);
-    cudaMallocManaged((void**) &currData, sizeof(double) * curr->getSize(), cudaMemAttachGlobal);
+    cudaMallocManaged((void**) &currData, sizeof(floatType) * curr->getSize(), cudaMemAttachGlobal);
     curr->cudaSetData(currData);
 
     cudaMallocManaged((void**) &prev, sizeof(State3D), cudaMemAttachGlobal);
     cudaMemcpy(prev, state, sizeof(State3D), cudaMemcpyHostToDevice);
-    cudaMallocManaged((void**) &prevData, sizeof(double) * prev->getSize(), cudaMemAttachGlobal);
-    cudaMemcpy(prevData, state->getData(), sizeof(double) * prev->getSize(), cudaMemcpyHostToDevice);
+    cudaMallocManaged((void**) &prevData, sizeof(floatType) * prev->getSize(), cudaMemAttachGlobal);
+    cudaMemcpy(prevData, state->getData(), sizeof(floatType) * prev->getSize(), cudaMemcpyHostToDevice);
     prev->cudaSetData(prevData);
 };
 
@@ -37,7 +37,7 @@ void Evolution3D::swap() {
 }
 
 void Evolution3D::exportToHost() {
-    cudaMemcpy(state->getData(), curr->getData(), sizeof(double) * curr->getSize(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(state->getData(), curr->getData(), sizeof(floatType) * curr->getSize(), cudaMemcpyDeviceToHost);
 }
 
 __device__ double Evolution3D::limiter(double theta) {
@@ -57,7 +57,7 @@ __device__ double Evolution3D::limitValue(double gamma, const intVector &directi
         value = prev->getValue(xIndex, vIndex);
         result = value - (1 + gamma) * limiter(thetaNom / thetaDenom) * thetaDenom / 2.0;
     }
-    return fmax(result, 0.);
+    return result;
 };
 
 __device__ double Evolution3D::schemeChange(const intVector &xIndex, int vxIndex, int vyIndex, int vzIndex) {
@@ -71,8 +71,8 @@ __device__ double Evolution3D::schemeChange(const intVector &xIndex, int vxIndex
 };
 
 __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int txStep, int tyStep) {
-    double h, value;
-    intVector xIndex, vIndex;
+    double h, value, gamma;
+    intVector xIndex, vIndex, direction;
     doubleVector v;
 
     for (int xzIndex = 0; xzIndex < prev->zIndexMax; xzIndex += 1) {
@@ -80,17 +80,48 @@ __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tx
             for (int xxIndex = txIndex; xxIndex < prev->xIndexMax; xxIndex += txStep) {
                 xIndex = {xxIndex, xyIndex, xzIndex};
 
-                h = 0;
-                if (geometry->isDiffuseReflection(xIndex, {1, 0, 0})) {
-                    h = calculateDiffusionFactor(xIndex, {1, 0, 0});
-                } else if (geometry->isDiffuseReflection(xIndex, {-1, 0, 0})) {
-                    h = calculateDiffusionFactor(xIndex, {-1, 0, 0});
-                } else if (geometry->isDiffuseReflection(xIndex, {0, -1, 0})) {
-                    h = calculateDiffusionFactor(xIndex, {0, -1, 0});
-                } else if (geometry->isDiffuseReflection(xIndex, {0, 1, 0})) {
-                    h = calculateDiffusionFactor(xIndex, {0, 1, 0});
+                for (int vzIndex = prev->vzIndexMin; vzIndex < prev->vzIndexMax; vzIndex ++) {
+                    for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex++) {
+                        for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex++) {
+                            vIndex = {vxIndex, vyIndex, vzIndex};
+                            v = grid->getV(vIndex);
+
+                            if (grid->inBounds(v) && geometry->isFreeFlow(xIndex, v)) {
+                                if (step % 2 == 0) {
+                                    gamma = grid->getVx(vxIndex) * tStep / grid->xStep;
+                                    direction = {1, 0, 0};
+                                } else {
+                                    gamma = grid->getVy(vyIndex) * tStep / grid->yStep;
+                                    direction = {0, 1, 0};
+                                }
+                                value = prev->getValue(xIndex, vIndex) - gamma *
+                                        (limitValue(gamma, direction, xIndex + direction, vIndex) - limitValue(gamma, direction, xIndex, vIndex));
+                                if (value < 0) {
+                                    printf("Ошибка: (%d, %d, %d), (%d, %d, %d)\t%.20f\n",
+                                           xxIndex, xyIndex, xzIndex, vxIndex, vyIndex, vzIndex, value);
+                                    value = prev->getValue(xIndex, vIndex);
+                                }
+                                curr->setValue(xIndex, vIndex, value);
+                            }
+                        }
+                    }
                 }
-//                printf("PREV: %d %d %d, %f\n", xxIndex, xyIndex, xzIndex, prev->getVelocitySlice(xIndex)[0]);
+
+                if (geometry->isDiffuseReflection(xIndex, {1, 0, 0})) {
+                    direction = {1, 0, 0};
+                    h = this->calculateDiffusionFactor(xIndex, direction);
+                } else if (geometry->isDiffuseReflection(xIndex, {-1, 0, 0})) {
+                    direction = {-1, 0, 0};
+                    h = this->calculateDiffusionFactor(xIndex, direction);
+                } else if (geometry->isDiffuseReflection(xIndex, {0, -1, 0})) {
+                    direction = {0, -1, 0};
+                    h = this->calculateDiffusionFactor(xIndex, direction);
+                } else if (geometry->isDiffuseReflection(xIndex, {0, 1, 0})) {
+                    direction = {0, 1, 0};
+                    h = this->calculateDiffusionFactor(xIndex, direction);
+                } else {
+                    h = 0;
+                }
 
                 for (int vzIndex = prev->vzIndexMin; vzIndex < prev->vzIndexMax; vzIndex ++) {
                     for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex++) {
@@ -104,11 +135,11 @@ __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tx
                                 } else if (geometry->isMirrorReflection(xIndex, v)) {
                                     doubleVector mirroredV = {grid->getVx(vxIndex), - grid->getVy(vyIndex), grid->getVz(vzIndex)};
                                     auto mirroredIndex = grid->getVIndex(mirroredV);
-                                    value = prev->getValue(xIndex, mirroredIndex);
+                                    value = curr->getValue(xIndex, mirroredIndex);
                                 } else if (geometry->isBorderReached(xIndex, v)) {
                                     value = prev->getValue(xIndex, vIndex);
                                 } else {
-                                    value = this->schemeChange(xIndex, vxIndex, vyIndex, vzIndex);
+                                    value = curr->getValue(xIndex, vIndex);
                                 }
                             } else {
                                 value = prev->getValue(xIndex, vIndex);
@@ -118,7 +149,6 @@ __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tx
                     }
                 }
 
-//                printf("CURR: %d %d %d, %f\n", xxIndex, xyIndex, xzIndex, curr->getVelocitySlice(xIndex)[0]);
                 ci->calculateIntegral(curr->getVelocitySlice(xIndex));
             }
         }
@@ -131,9 +161,9 @@ __device__ double  Evolution3D::calculateDiffusionFactor(const intVector& xIndex
     doubleVector v;
     intVector vIndex;
 
-    for (int vzIndex = prev->vzIndexMin; vzIndex < prev->vzIndexMax; vzIndex ++) {
-        for (int vxIndex = prev->vxIndexMin; vxIndex < prev->vxIndexMax; vxIndex++) {
-            for (int vyIndex = prev->vyIndexMin; vyIndex < prev->vyIndexMax; vyIndex++) {
+    for (int vzIndex = curr->vzIndexMin; vzIndex < curr->vzIndexMax; vzIndex ++) {
+        for (int vxIndex = curr->vxIndexMin; vxIndex < curr->vxIndexMax; vxIndex++) {
+            for (int vyIndex = curr->vyIndexMin; vyIndex < curr->vyIndexMax; vyIndex++) {
                 vIndex = {vxIndex, vyIndex, vzIndex};
                 if (grid->inBounds(vIndex)) {
                     v = grid->getV(vIndex);
@@ -142,7 +172,7 @@ __device__ double  Evolution3D::calculateDiffusionFactor(const intVector& xIndex
                         denom += multiplier * exp(-(v * v) / 2);
                     } else if (multiplier < 0) {
                         nom += multiplier *
-                               (prev->getValue(xIndex, vIndex) + prev->getValue(xIndex + direction, vIndex)) / 2.0;
+                               (curr->getValue(xIndex, vIndex) + curr->getValue(xIndex + direction, vIndex)) / 2.0;
                     }
                 }
             }

@@ -10,7 +10,8 @@ DoduladCI::DoduladCI(double tStep, double vStep, int vGridRadius, State3D *state
     ci::init(&potential, ci::Z_SYMM);
     vIndexMap = new IndexMap();
     for (const auto &vIndex: state->getVelocityIterable()) {
-        auto svIndex = vIndex + intVector({state->nvx, state->nvy, state->nvz});
+        auto svIndex = vIndex - intVector({state->vxIndexMin, state->vyIndexMin, state->vzIndexMin});
+//        auto svIndex = vIndex + intVector({vGridRadius, vGridRadius, vGridRadius});
         (*vIndexMap)[svIndex[0] % state->nvx][svIndex[1] % state->nvy][svIndex[2] % state->nvz] = state->index({0, 0, 0}, vIndex);
     }
 }
@@ -28,7 +29,7 @@ void DoduladCI::finalizeGrid() {
     cudaFree(ncData);
 }
 
-__device__ void DoduladCI::calculateIntegral(double *slice) {
+__device__ void DoduladCI::calculateIntegral(floatType* slice) {
     ci::cudaIter(ncData, ncSize, slice, slice);
 }
 

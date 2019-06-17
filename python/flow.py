@@ -1,8 +1,9 @@
 import os
 import scipy
+import numpy
 from matplotlib import pyplot
 
-DATA_DIR = 'data/23.04.19/6/flow'
+DATA_DIR = 'data/06.05.19/8/flow'
 
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 datadir = os.path.join(current_dir, DATA_DIR)
@@ -10,9 +11,14 @@ datadir = os.path.join(current_dir, DATA_DIR)
 flow_filename = os.path.join(datadir, 'flow.out')
 flow = scipy.genfromtxt(flow_filename, delimiter="\t")
 
-shift = 10
-values = (flow[shift:, 1] - flow[:-shift, 1]) / flow[shift // 2:-shift // 2, 1] / shift
-x = flow[shift // 2:-shift // 2, 0]
+# shift = 5
+# x = flow[shift // 2:-shift // 2, 0]
+# values = (flow[shift:, 1] - flow[:-shift, 1]) / flow[shift // 2:-shift // 2, 1] / shift
+
+x = flow[1:-1, 0]
+ln_values = numpy.log(flow[:, 1])
+# values = (ln_values[2:] + ln_values[:-2] - 2 * ln_values[1:-1])
+values = (ln_values[2:] - ln_values[:-2]) / 2
 
 flow_diff = scipy.dstack((x, values))[0]
 

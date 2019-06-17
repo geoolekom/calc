@@ -28,14 +28,14 @@ State3D::State3D(intVector xLimits, intVector vBottomLimits, intVector vTopLimit
 State3D::State3D(const State3D &state) : State3D(intVector({xIndexMax, yIndexMax, zIndexMax}),
         intVector({vxIndexMin, vyIndexMin, vzIndexMin}), intVector({vxIndexMax, vyIndexMax, vzIndexMax})) {};
 
-int State3D::getSize() const { return nx * ny * nz * nvx * nvy * nvz; };
+size_t State3D::getSize() const { return nx * ny * nz * nvx * nvy * nvz; };
 
 __host__ __device__ double State3D::getValue(const intVector &x, const intVector &v) const {
     return this->data[this->index(x, v)];
 };
 
 __host__ __device__ void State3D::setValue(const intVector &x, const intVector &v, double value) {
-    this->data[this->index(x, v)] = value;
+    this->data[this->index(x, v)] = (floatType) value;
 };
 
 __host__ __device__ int State3D::index(const intVector &x, const intVector &v) const {
@@ -47,23 +47,23 @@ __host__ __device__ int State3D::index(const intVector &x, const intVector &v) c
            ((x[2] + nz) % nz) * nvx * nvy * nvz * nx * ny;
 };
 
-__device__ double* State3D::getVelocitySlice(const intVector &x) {
+__device__ floatType* State3D::getVelocitySlice(const intVector &x) {
     return data + nvz * nvy * nvx * (((x[0] + nx) % nx) + ((x[1] + ny) % ny) * nx + ((x[2] + nz) % nz) * nx * ny);
 }
 
-double* State3D::getData() const { return this->data; };
+floatType* State3D::getData() const { return this->data; };
 
-void State3D::setData(double *data) {
+void State3D::setData(floatType* data) {
     this->data = data;
 };
 
-void State3D::cudaSetData(double *data) {
-    cudaMemcpy(&(this->data), &data, sizeof(double*), cudaMemcpyHostToDevice);
+void State3D::cudaSetData(floatType* data) {
+    cudaMemcpy(&(this->data), &data, sizeof(floatType*), cudaMemcpyHostToDevice);
 };
 
 void State3D::cudaAllocate() {
-    double* data;
-    cudaMallocManaged((void**) &data, sizeof(double) * this->getSize(), cudaMemAttachGlobal);
+    floatType* data;
+    cudaMallocManaged((void**) &data, sizeof(floatType) * this->getSize(), cudaMemAttachGlobal);
     this->cudaSetData(data);
 };
 
@@ -76,7 +76,7 @@ const State3D::iterable& State3D::getSpaceIterable() { return spaceIterable; };
 const State3D::iterable& State3D::getVelocityIterable(){ return velocityIterable; };
 
 void State3D::allocate() {
-    this->data = new double[this->getSize()]();
+    this->data = new floatType[this->getSize()]();
 }
 
 void State3D::release() {

@@ -23,8 +23,8 @@ private:
     State3D* prev;
     State3D* state;
 
-    double* currData;
-    double* prevData;
+    floatType* currData;
+    floatType* prevData;
 public:
     Evolution3D(double tStep, State3D* state, Grid3D* grid, IndexTankWithScreen2D* geometry, DoduladCI* ci);
     ~Evolution3D();

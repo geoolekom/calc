@@ -4,6 +4,7 @@
 #include <host_defines.h>
 #include <array>
 
+typedef float floatType;
 typedef std::array<int, 3> intVector;
 typedef std::array<double, 3> doubleVector;
 

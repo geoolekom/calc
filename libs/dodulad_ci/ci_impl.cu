@@ -10,13 +10,13 @@
 
 namespace ci {
     __device__ void elog(const char *name, double var, int index) {
-        if (isnan(var)) {
-            printf("%s: %f <- %d\n", name, var, index);
+        if (isnan(var) || var < 0) {
+            printf("%s: %.20f <- %d\n", name, var, index);
             assert(0);
         }
     }
 
-    __device__ void cudaIter(node_calc* ncData, size_t ncSize, double* f1, double* f2) {
+    __device__ void cudaIter(node_calc* ncData, size_t ncSize, float* f1, float* f2) {
         double x[2], y[2], z[2], v[2];
         for (int i = 0; i < ncSize; i++) {
             const auto p = ncData + i;
@@ -34,13 +34,25 @@ namespace ci {
                 y[0] = 1. - p->r;
                 y[1] = p->r;
                 elog("y0", y[0], 0);
-
+                elog("y1", y[1], 0);
 
                 v[0] = pow(x[0], y[0]) * pow(z[0], y[0]);
+                if (isnan(v[0])) {
+                    printf("v0: x0: %.20f, z0: %.20f, y0: %.20f\n", x[0], z[0], y[0]);
+                    assert(0);
+                }
+
                 v[1] = pow(x[1], y[1]) * pow(z[1], y[1]);
+                if (isnan(v[1])) {
+                    printf("v1: x1: %.20f, z1: %.20f, y1: %.20f\n", x[1], z[1], y[1]);
+                    assert(0);
+                }
 
                 double rr5 = f1[p->i1];
                 double rr6 = f2[p->i2];
+                elog("rr5", rr5, p->i1);
+                elog("rr6", rr6, p->i2);
+
                 double d = ( - v[0] * v[1] + rr5 * rr6) * p->c;
 
                 double dl = (1. - p->r) * d;
@@ -50,8 +62,8 @@ namespace ci {
                 f2[p->i2l] += dl;
                 f1[p->i1m] += dm;
                 f2[p->i2m] += dm;
-                f1[p->i1] -= d;
-                f2[p->i2] -= d;
+                f1[p->i1 ] -= d;
+                f2[p->i2 ] -= d;
 
                 if ((f1[p->i1l] < 0) ||
                     (f1[p->i1m] < 0) ||
@@ -60,12 +72,12 @@ namespace ci {
                     (f1[p->i1 ] < 0) ||
                     (f2[p->i2 ] < 0)) {
 
-                    f1[p->i1l] = x[0];
-                    f1[p->i1m] = x[1];
-                    f2[p->i2l] = z[0];
-                    f2[p->i2m] = z[1];
-                    f1[p->i1 ] = rr5;
-                    f2[p->i2 ] = rr6;
+                    f1[p->i1l] = (float) x[0];
+                    f1[p->i1m] = (float) x[1];
+                    f2[p->i2l] = (float) z[0];
+                    f2[p->i2m] = (float) z[1];
+                    f1[p->i1 ] = (float) rr5;
+                    f2[p->i2 ] = (float) rr6;
                 }
             } else {
                 double g1 = f1[p->i1];
@@ -75,20 +87,20 @@ namespace ci {
 
                 double d = (- g3*g4 + g1*g2) * p->c;
 
-                f1[p->i1]  -= d;
-                f2[p->i2]  -= d;
+                f1[p->i1 ] -= d;
+                f2[p->i2 ] -= d;
                 f1[p->i1m] += d;
                 f2[p->i2m] += d;
 
                 if ((f1[p->i1m] < 0) ||
                     (f2[p->i2m] < 0) ||
-                    (f1[p->i1] < 0) ||
-                    (f2[p->i2] < 0))  {
+                    (f1[p->i1 ] < 0) ||
+                    (f2[p->i2 ] < 0))  {
 
-                    f1[p->i1] = g1;
-                    f2[p->i2] = g2;
-                    f1[p->i1m] = g3;
-                    f2[p->i2m] = g4;
+                    f1[p->i1 ] = (float) g1;
+                    f2[p->i2 ] = (float) g2;
+                    f1[p->i1m] = (float) g3;
+                    f2[p->i2m] = (float) g4;
                 }
             }
         }
