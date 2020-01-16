@@ -2,9 +2,9 @@ set term pngcairo size 1200, 700
 set grid xtics lc rgb "#bbbbbb" lw 1 lt 0
 set grid ytics lc rgb "#bbbbbb" lw 1 lt 0
 
-data_dir = 'data/06.05.19/8/flow'
-output_dir = 'data/06.05.19/8'
-n = 1500
+data_dir = 'data/27.08.19/1/flow'
+output_dir = 'data/27.08.19/1'
+n = 400
 
 # Поток через щель
 

@@ -2,9 +2,9 @@
 // Created by geoolekom on 18.04.19.
 //
 
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 #include "interfaces/Geometry.h"
-#include "interfaces/base3D.h"
+#include "interfaces/base3D.cu"
 
 #ifndef CALC_INDEXTANKWITHSCREEN2D_H
 #define CALC_INDEXTANKWITHSCREEN2D_H

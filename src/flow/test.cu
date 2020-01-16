@@ -3,7 +3,7 @@
 #include <math.h>
 #include <ctime>
 #include <stdio.h>
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 
 
 __device__ float sum(float a, float b) {

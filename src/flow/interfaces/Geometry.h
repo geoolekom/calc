@@ -5,7 +5,7 @@
 #ifndef CALC_GEOMETRY_H
 #define CALC_GEOMETRY_H
 
-#include "base3D.h"
+#include "base3D.cu"
 
 
 class Geometry3D {

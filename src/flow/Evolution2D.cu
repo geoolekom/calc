@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <host_defines.h>
 #include <cuda_runtime_api.h>
 #include <device_launch_parameters.h>
 #include "Grid2D.cu"
@@ -91,7 +90,7 @@ public:
         intVector xIndex, vIndex;
         doubleVector v;
 
-//        ci->stepForward();
+        ci->stepForward();
 
         for (int xyIndex = tyIndex; xyIndex < prev->yIndexMax; xyIndex += tyStep) {
             for (int xxIndex = txIndex; xxIndex < prev->xIndexMax; xxIndex += txStep) {
@@ -128,7 +127,7 @@ public:
                     }
                 }
 
-//                ci->calculateIntegral(curr, xxIndex, xyIndex);
+                ci->calculateIntegral(curr, xxIndex, xyIndex);
             }
         }
     }

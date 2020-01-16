@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "ci.hpp"
+#include "ci.h"
 #include "sse.hpp"
 #include "v.hpp"
 #include "korobov.hpp"

@@ -1,4 +1,4 @@
-#include "ci.hpp"
+#include "ci.h"
 
 namespace ci {
 
@@ -17,8 +17,7 @@ namespace ci {
 		symm = s;
 	}
 
-	void finalize() {
-	}
+	void finalize() {}
 
 	const V3d scatter(const V3d& x, double theta, double e) {
 

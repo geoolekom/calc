@@ -2,9 +2,9 @@
 #include <math.h>
 #include <math_constants.h>
 #include <thrust/device_vector.h>
-#include <host_defines.h>
 #include <cuda_runtime_api.h>
-#include "ci.hpp"
+#include <cuda_runtime_api.h>
+#include "ci_cuda.h"
 
 #define EPS 1e-10
 

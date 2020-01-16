@@ -2,7 +2,7 @@
 // Created by geoolekom on 21.02.19.
 //
 
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 
 #ifndef CALC_COLLISIONINTEGRAL_H
 #define CALC_COLLISIONINTEGRAL_H

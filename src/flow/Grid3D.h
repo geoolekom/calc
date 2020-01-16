@@ -5,8 +5,8 @@
 #ifndef CALC_GRID3D_H
 #define CALC_GRID3D_H
 
-#include "interfaces/base3D.h"
-#include <host_defines.h>
+#include "interfaces/base3D.cu"
+#include <cuda_runtime_api.h>
 
 class Grid3D {
 private:

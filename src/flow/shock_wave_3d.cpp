@@ -3,7 +3,7 @@
 #include <math.h>
 #include <time.h>
 
-#include "dodulad_ci/ci.hpp"
+#include "dodulad_ci/ci.h"
 
 #define N 16
 #define PI 3.14159265358979323846

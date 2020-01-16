@@ -6,7 +6,7 @@
 #define CALC_DODULADCI_H
 
 #include <map>
-#include <dodulad_ci/ci.hpp>
+#include <dodulad_ci/ci_cuda.h>
 #include "State3D.h"
 #include "interfaces/CollisionIntegral.h"
 

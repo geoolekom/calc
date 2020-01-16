@@ -1,7 +1,7 @@
 #ifndef CALC_BASE3D_H
 #define CALC_BASE3D_H
 
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 #include <array>
 
 typedef float floatType;

@@ -5,7 +5,7 @@
 #ifndef CALC_BASE2D_H
 #define CALC_BASE2D_H
 
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 #include <array>
 
 typedef std::array<int, 2> intVector;

@@ -4,7 +4,6 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <host_defines.h>
 #include <cuda_runtime_api.h>
 
 #include "utils/cuda.h"
@@ -12,7 +11,6 @@
 #include "State3D.h"
 #include "Grid3D.h"
 #include "Evolution3D.h"
-#include "IndexTankWithScreen2D.cu"
 #include "Storage2D.h"
 #include "DoduladCI.h"
 
@@ -50,11 +48,12 @@ __global__ void evolve(Evolution3D* e, int step) {
 
 
 int main(int argc, char* argv[]) {
-    char dataDir[] = "data/06.05.19/9/flow";
-    const int k = 1;
-    const int step = 10 * k;
+    char dataDir[] = "data/flow";
+    const int k = 4;
+    const int step = 100 * k;
 
-    int vRadius = 48;
+    int vRadius = 10;
+    // Занимаемая память пропорциональна k^2 * vRadius^3
     double vMax = 4.80;
     double tStep = 1e-1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
 
@@ -70,7 +69,7 @@ int main(int argc, char* argv[]) {
     cudaCopy(&geometry, &tempGeometry);
 
     Grid3D* grid;
-    auto tempGrid = Grid3D({xStep, xStep, xStep}, {vStep, vStep, vMax}, vMax);
+    auto tempGrid = Grid3D({xStep, xStep, xStep}, {vStep, vStep, vStep}, vMax);
     cudaCopy(&grid, &tempGrid);
 
 //    State3D* state;
@@ -78,7 +77,7 @@ int main(int argc, char* argv[]) {
 //    cudaCopy(&state, &tempState);
 //    state->cudaAllocate();
 
-    State3D* state = new State3D({length, height, 1}, {-vRadius, -vRadius, -1}, {vRadius, vRadius, 1});
+    State3D* state = new State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
     state->allocate();
 
     setInitialValues(state, grid, geometry);
@@ -100,9 +99,9 @@ int main(int argc, char* argv[]) {
     cudaMemGetInfo(&available, &total);
     printf("Занято видеопамяти: %zu Мб / %zu Мб\n", (total - available) / 1024 / 1024, total / 1024 / 1024);
     printf("Начинаем обсчет.\n");
-    for (int i = 0; i < 3000 * k; i++) {
+    for (int i = 0; i < 1000 * k; i++) {
         ci->generateGrid();
-        evolve<<<dim3(5, 1, 1), dim3(100, 5, 1)>>>(evolution, i);
+        evolve<<<dim3(16, 1, 1), dim3(256, 4, 1)>>>(evolution, i);
         auto ret = cudaDeviceSynchronize();
         ci->finalizeGrid();
         if (ret != 0) {

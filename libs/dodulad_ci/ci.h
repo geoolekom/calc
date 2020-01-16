@@ -6,7 +6,6 @@
 #include <vector>
 #include <cstddef>
 #include <cmath>
-#include "host_defines.h"
 
 namespace ci {
 
@@ -36,8 +35,6 @@ namespace ci {
 
 
 	template <typename F> void iter(F& f1, F& f2);
-
-	__device__ void cudaIter(node_calc* ncData, size_t ncSize, float* f1, float* f2);
 
 	void finalize();
 

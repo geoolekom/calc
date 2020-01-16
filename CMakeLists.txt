@@ -32,7 +32,7 @@ target_sources(range-v3 PRIVATE libs/ranges/include/range/v3/all.hpp)
 add_library(dodulad_ci STATIC "")
 set_target_properties(dodulad_ci PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_sources(dodulad_ci PRIVATE
-        libs/dodulad_ci/ci.hpp
+        libs/dodulad_ci/ci.h
         libs/dodulad_ci/ci.cpp libs/dodulad_ci/ci_impl.hpp libs/dodulad_ci/ci_impl.cu
         libs/dodulad_ci/korobov.hpp
         libs/dodulad_ci/sse.hpp
@@ -46,12 +46,11 @@ target_sources(flow PRIVATE
         src/flow/main.cu
         src/flow/utils/cuda.h
 
-        src/flow/interfaces/base3D.h
+        src/flow/interfaces/base3D.cu
         src/flow/State3D.h src/flow/State3D.cu
         src/flow/Grid3D.h src/flow/Grid3D.cu
-        src/flow/IndexTankWithScreen2D.cpp src/flow/IndexTankWithScreen2D.cu
         src/flow/Evolution3D.h src/flow/Evolution3D.cu
-        src/flow/Storage2D.cpp src/flow/Storage2D.h
+        src/flow/Storage2D.h src/flow/Storage2D.cu
 
         src/flow/DoduladCI.cu src/flow/DoduladCI.h
 #        src/flow/VagapovaCI.h src/flow/VagapovaCI.h

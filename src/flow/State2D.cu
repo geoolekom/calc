@@ -2,7 +2,6 @@
 #define CALC_STATE2D_H
 
 #include <vector>
-#include <host_defines.h>
 #include <cuda_runtime_api.h>
 #include "interfaces/base2D.h"
 

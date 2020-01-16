@@ -5,7 +5,7 @@
 #ifndef CALC_EVOLUTION3D_H
 #define CALC_EVOLUTION3D_H
 
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 #include "State3D.h"
 #include "Grid3D.h"
 #include "DoduladCI.h"

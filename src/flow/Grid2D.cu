@@ -5,7 +5,7 @@
 #ifndef CALC_GRID2D_H
 #define CALC_GRID2D_H
 
-#include <host_defines.h>
+#include <cuda_runtime_api.h>
 #include "interfaces/base2D.h"
 
 class Grid2D {

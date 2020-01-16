@@ -1,8 +1,8 @@
 #ifndef CALC_STATE3D_CU
 #define CALC_STATE3D_CU
 
-#include "interfaces/base3D.h"
-#include <host_defines.h>
+#include "interfaces/base3D.cu"
+#include <cuda_runtime_api.h>
 #include <vector>
 
 class State3D {
