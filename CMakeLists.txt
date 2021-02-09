@@ -4,8 +4,8 @@ project(calc
         VERSION 0.1.0
         LANGUAGES CXX CUDA)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
-set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
-set(CMAKE_CUDA_FLAGS "-std=c++11 -O3 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES --expt-relaxed-constexpr -lineinfo -arch=sm_30")
+set(CMAKE_CXX_FLAGS "-std=c++14 -O3")
+set(CMAKE_CUDA_FLAGS "-std=c++14 -O3 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES --expt-relaxed-constexpr -lineinfo -gencode arch=compute_75,code=sm_75")
 
 set(SCHEMES_SRC src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
 add_executable(schemes ${SCHEMES_SRC})

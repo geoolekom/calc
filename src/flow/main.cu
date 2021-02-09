@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 //    cudaCopy(&state, &tempState);
 //    state->cudaAllocate();
 
-    State3D* state = new State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
+    auto state = new State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
     state->allocate();
 
     setInitialValues(state, grid, geometry);
@@ -99,13 +99,18 @@ int main(int argc, char* argv[]) {
     cudaMemGetInfo(&available, &total);
     printf("Занято видеопамяти: %zu Мб / %zu Мб\n", (total - available) / 1024 / 1024, total / 1024 / 1024);
     printf("Начинаем обсчет.\n");
-    for (int i = 0; i < 1000 * k; i++) {
+    for (int i = 0; i < 200 * k; i++) {
         ci->generateGrid();
-        evolve<<<dim3(16, 1, 1), dim3(256, 4, 1)>>>(evolution, i);
-        auto ret = cudaDeviceSynchronize();
+        evolve<<<dim3(8, 1, 1), dim3(256, 1, 1)>>>(evolution, i);
+        auto errorCode = cudaGetLastError();
+        if (errorCode != 0) {
+            std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
+            break;
+        }
         ci->finalizeGrid();
-        if (ret != 0) {
-            std::cout << "Ошибка: " << cudaGetErrorString(ret) << std::endl;
+        errorCode = cudaDeviceSynchronize();
+        if (errorCode != 0) {
+            std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
             break;
         }
         evolution->swap();
