@@ -51,6 +51,7 @@ target_sources(flow PRIVATE
         src/flow/Grid3D.h src/flow/Grid3D.cu
         src/flow/Evolution3D.h src/flow/Evolution3D.cu
         src/flow/Storage2D.h src/flow/Storage2D.cu
+        src/flow/RoundHoleTank.cuh src/flow/RoundHoleTank.cu
 
         src/flow/DoduladCI.cu src/flow/DoduladCI.h
 #        src/flow/VagapovaCI.h src/flow/VagapovaCI.h
