@@ -6,6 +6,7 @@ project(calc
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
 set(CMAKE_CXX_FLAGS "-std=c++14 -O3")
 set(CMAKE_CUDA_FLAGS "-std=c++14 -O3 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES --expt-relaxed-constexpr -lineinfo -gencode arch=compute_75,code=sm_75")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SCHEMES_SRC src/schemes/ExplicitScheme.cpp src/schemes/SimpleScheme.cpp src/schemes/LaxWendroffScheme.cpp src/schemes/main.cpp)
 add_executable(schemes ${SCHEMES_SRC})
@@ -51,6 +52,7 @@ target_sources(flow PRIVATE
         src/flow/Grid3D.h src/flow/Grid3D.cu
         src/flow/Evolution3D.h src/flow/Evolution3D.cu
         src/flow/Storage2D.h src/flow/Storage2D.cu
+        src/flow/RoundHoleTank.cuh src/flow/RoundHoleTank.cu
 
         src/flow/DoduladCI.cu src/flow/DoduladCI.h
 #        src/flow/VagapovaCI.h src/flow/VagapovaCI.h

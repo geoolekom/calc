@@ -1,0 +1,18 @@
+fail_fast: false
+repos:
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: python
+    hooks:
+      - id: clang-format
+        args: [--style=file, -i]
+        files: \.(cu|cuh|cpp|hpp|c|h)$
+      - id: clang-tidy
+        args:
+        - --checks=bugprone-*,readability-*
+        - --fix-errors
+        - --double-dash
+        - --cuda-path=/usr/local/cuda/
+        - --cuda-host-only
+        - -Ilibs
+        - -std=c++14
+        files: \.(cu|cuh|cpp|h)$
