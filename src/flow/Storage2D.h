@@ -5,81 +5,74 @@
 #ifndef CALC_STORAGE2D_H
 #define CALC_STORAGE2D_H
 
-
-#include <ostream>
-#include <iostream>
-#include <cmath>
 #include "Grid3D.h"
 #include "State3D.h"
+#include <cmath>
+#include <iostream>
+#include <ostream>
 
 class Storage2D {
-private:
-    State3D* state;
-    Grid3D* grid;
-public:
+  private:
+    State3D *state;
+    Grid3D *grid;
+
+  public:
     Storage2D() = default;
-    Storage2D(State3D* state, Grid3D* grid) : state(state), grid(grid) {};
+    Storage2D(State3D *state, Grid3D *grid) : state(state), grid(grid){};
 
-    void exportAll(std::ostream* stream) {
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
-                auto density = this->getDensity(xIndex, yIndex);
-                auto temperature = this->getTemperature({xIndex, yIndex});
-                auto velocity = this->getVelocity({xIndex, yIndex});
-                (*stream)
-                        << grid->getXx(xIndex) << "\t"
-                        << grid->getXy(yIndex) << "\t"
-                        << density << "\t"
-                        << temperature << "\t"
-                        << velocity[0] << "\t" << velocity[1] << "\t"
-                        << std::endl;
+    void exportAll(std::ostream *stream) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
+            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex++) {
+                for (int zIndex = 0; zIndex < state->zIndexMax; zIndex++) {
+                    auto density = this->getDensity(xIndex, yIndex, zIndex);
+                    auto temperature = this->getTemperature({xIndex, yIndex, zIndex});
+                    auto velocity = this->getVelocity({xIndex, yIndex, zIndex});
+                    (*stream) << grid->getXx(xIndex) << "\t" << grid->getXy(yIndex) << "\t" << grid->getXz(zIndex)
+                              << "\t" << density << "\t" << temperature << "\t" << velocity[0] << "\t" << velocity[1]
+                              << "\t" << velocity[2] << "\t"
+                              << "\t" << std::endl;
+                }
+                (*stream) << std::endl;
             }
             (*stream) << std::endl;
         }
     }
 
-    void exportDensity(std::ostream* stream) {
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
-                (*stream)
-                        << grid->getXx(xIndex) << "\t"
-                        << grid->getXy(yIndex) << "\t"
-                        << this->getDensity(xIndex, yIndex) << "\n";
+    void exportDensity(std::ostream *stream) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
+            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex++) {
+                (*stream) << grid->getXx(xIndex) << "\t" << grid->getXy(yIndex) << "\t"
+                          << this->getDensity(xIndex, yIndex, 0) << "\n";
             }
             (*stream) << std::endl;
         }
     }
 
-    void exportTemperature(std::ostream* stream) {
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
-                (*stream)
-                        << grid->getXx(xIndex) << "\t"
-                        << grid->getXy(yIndex) << "\t"
-                        << this->getTemperature({xIndex, yIndex, 0}) << "\n";
+    void exportTemperature(std::ostream *stream) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
+            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex++) {
+                (*stream) << grid->getXx(xIndex) << "\t" << grid->getXy(yIndex) << "\t"
+                          << this->getTemperature({xIndex, yIndex, 0}) << "\n";
             }
             (*stream) << std::endl;
         }
     }
 
-    void exportTemperatureTensor(std::ostream* stream, const intVector& tensorIndex) {
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
-                (*stream)
-                        << grid->getXx(xIndex) << "\t"
-                        << grid->getXy(yIndex) << "\t"
-                        << this->getTemperatureTensor({xIndex, yIndex, 0}, tensorIndex) << "\n";
+    void exportTemperatureTensor(std::ostream *stream, const intVector &tensorIndex) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
+            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex++) {
+                (*stream) << grid->getXx(xIndex) << "\t" << grid->getXy(yIndex) << "\t"
+                          << this->getTemperatureTensor({xIndex, yIndex, 0}, tensorIndex) << "\n";
             }
             (*stream) << std::endl;
         }
     }
 
-
-    void exportFunction(std::ostream* stream, int xIndex, int yIndex) {
+    void exportFunction(std::ostream *stream, int xIndex, int yIndex) {
         doubleVector v;
         double value = 0;
-        for (int vyIndex = state->vyIndexMin; vyIndex < state->vyIndexMax; vyIndex ++) {
-            for (int vxIndex = state->vxIndexMin; vxIndex < state->vxIndexMax; vxIndex ++) {
+        for (int vyIndex = state->vyIndexMin; vyIndex < state->vyIndexMax; vyIndex++) {
+            for (int vxIndex = state->vxIndexMin; vxIndex < state->vxIndexMax; vxIndex++) {
                 v = grid->getV({vxIndex, vyIndex});
                 if (grid->inBounds(v)) {
                     value = state->getValue({xIndex, yIndex, 0}, {vxIndex, vyIndex, 0});
@@ -106,31 +99,31 @@ public:
         (*stream) << step << "\t" << value << "\n";
     }
 
-    void exportVelocity(std::ostream* stream) {
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
+    void exportVelocity(std::ostream *stream) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
+            for (int yIndex = 0; yIndex < state->yIndexMax; yIndex++) {
                 auto value = this->getVelocity({xIndex, yIndex});
-                (*stream)
-                        << grid->getXx(xIndex) << "\t"
-                        << grid->getXy(yIndex) << "\t"
-                        << value[0] << "\t" << value[1] << "\n";
+                (*stream) << grid->getXx(xIndex) << "\t" << grid->getXy(yIndex) << "\t" << value[0] << "\t" << value[1]
+                          << "\n";
             }
             (*stream) << std::endl;
         }
     }
 
-    void exportRadius(std::ostream* stream) {
+    void exportRadius(std::ostream *stream, int holeCenterY, int holeCenterZ) {
         const double k = 0.5;
 
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            const double axisValue = this->getDensity(xIndex, 0);
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
+            const double axisValue = this->getDensity(xIndex, holeCenterY, holeCenterZ);
             bool radiusFound = false;
-            for (int yIndex = 1; yIndex < state->yIndexMax; yIndex ++) {
-                auto value = this->getDensity(xIndex, yIndex);
+            for (int yIndex = holeCenterY + 1; yIndex < state->yIndexMax; yIndex++) {
+                auto value = this->getDensity(xIndex, yIndex, holeCenterZ);
                 if (value < axisValue * k) {
-                    auto prevValue = this->getDensity(xIndex, yIndex - 1);
+                    auto prevValue = this->getDensity(xIndex, yIndex - 1, holeCenterZ);
                     (*stream) << grid->getXx(xIndex) << "\t"
-                              << grid->getXy(yIndex) - (axisValue * k - value) * grid->yStep / (prevValue - value) << "\n";
+                              << grid->getXy(yIndex) - (axisValue * k - value) * grid->yStep / (prevValue - value) -
+                                     holeCenterY
+                              << "\n";
                     radiusFound = true;
                     break;
                 }
@@ -141,33 +134,33 @@ public:
         }
     }
 
-    void exportMachNumber(std::ostream* stream, int yIndex) {
-        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
+    void exportMachNumber(std::ostream *stream, int yIndex) {
+        for (int xIndex = 0; xIndex < state->xIndexMax; xIndex++) {
             auto axisV = this->getVelocity({xIndex, yIndex});
             auto axisT = this->getTemperature({xIndex, yIndex});
             (*stream) << grid->getXx(xIndex) << "\t" << axisV[0] / std::sqrt(5 * axisT / 3) << "\n";
         }
     }
 
-
-    double getDensity(int xIndex, int yIndex) {
+    double getDensity(int xIndex, int yIndex, int zIndex) {
         double value = 0;
         doubleVector v;
-        for (const auto& vIndex : state->getVelocityIterable()) {
+        for (const auto &vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
-                value += state->getValue({xIndex, yIndex, 0}, vIndex);
+                value += state->getValue({xIndex, yIndex, zIndex}, vIndex);
             }
         }
         return value;
     }
 
-    double getTemperature(const intVector& xIndex) {
-        double nom = 0, denom = 0;
+    double getTemperature(const intVector &xIndex) {
+        double nom = 0;
+        double denom = 0;
         doubleVector v;
         const auto vAvg = this->getVelocity(xIndex);
 
-        for (const auto& vIndex : state->getVelocityIterable()) {
+        for (const auto &vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
                 denom += state->getValue(xIndex, vIndex);
@@ -178,12 +171,13 @@ public:
         return (nom / denom) / 3;
     }
 
-    double getTemperatureTensor(const intVector& xIndex, const intVector& tensorIndex) {
-        double nom = 0, denom = 0;
+    double getTemperatureTensor(const intVector &xIndex, const intVector &tensorIndex) {
+        double nom = 0;
+        double denom = 0;
         doubleVector v;
         const auto vAvg = this->getVelocity(xIndex);
 
-        for (const auto& vIndex : state->getVelocityIterable()) {
+        for (const auto &vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
                 denom += state->getValue(xIndex, vIndex);
@@ -194,10 +188,11 @@ public:
         return nom / denom;
     }
 
-    double getEnergy(const intVector& xIndex) {
+    double getEnergy(const intVector &xIndex) {
         doubleVector v;
-        double nom = 0, denom = 0;
-        for (const auto& vIndex : state->getVelocityIterable()) {
+        double nom = 0;
+        double denom = 0;
+        for (const auto &vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
                 denom += state->getValue(xIndex, vIndex);
@@ -207,10 +202,10 @@ public:
         return nom / denom;
     }
 
-    doubleVector getVelocity(const intVector& xIndex) {
+    doubleVector getVelocity(const intVector &xIndex) {
         doubleVector v, vAvg = {0, 0, 0};
         double denom = 0;
-        for (const auto& vIndex : state->getVelocityIterable()) {
+        for (const auto &vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
                 denom += state->getValue(xIndex, vIndex);
@@ -221,5 +216,4 @@ public:
     }
 };
 
-
-#endif //CALC_STORAGE2D_H
+#endif // CALC_STORAGE2D_H

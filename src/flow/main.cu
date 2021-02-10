@@ -1,34 +1,34 @@
-#include <iostream>
-#include <fstream>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <cuda_runtime_api.h>
+#include <fstream>
+#include <iostream>
 
-#include "utils/cuda.h"
-#include "interfaces/Geometry.h"
-#include "State3D.h"
-#include "Grid3D.h"
-#include "Evolution3D.h"
-#include "Storage2D.h"
 #include "DoduladCI.h"
+#include "Evolution3D.h"
+#include "Grid3D.h"
+#include "State3D.h"
+#include "Storage2D.h"
+#include "interfaces/Geometry.h"
+#include "utils/cuda.h"
 
-void setInitialValues(State3D* state, Grid3D* grid, IndexTankWithScreen2D* geometry) {
+void setInitialValues(State3D *state, Grid3D *grid, IndexTankWithScreen2D *geometry) {
     double denom = 0, value;
     doubleVector v;
 
-    for (const auto& vIndex : state->getVelocityIterable()) {
+    for (const auto &vIndex : state->getVelocityIterable()) {
         if (grid->inBounds(vIndex)) {
             v = grid->getV(vIndex);
-            denom += exp(- (v * v) / 2);
+            denom += exp(-(v * v) / 2);
         }
     }
 
-    for (const auto& xIndex : state->getSpaceIterable()) {
-        for (const auto& vIndex : state->getVelocityIterable()) {
+    for (const auto &xIndex : state->getSpaceIterable()) {
+        for (const auto &vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
-            value = exp(- (v * v) / 2) / denom;
+            value = exp(-(v * v) / 2) / denom;
             if (!geometry->isInTank(xIndex)) {
                 value /= 1e8;
             }
@@ -37,56 +37,59 @@ void setInitialValues(State3D* state, Grid3D* grid, IndexTankWithScreen2D* geome
     }
 }
 
-
-__global__ void evolve(Evolution3D* e, int step) {
+__global__ void evolve(Evolution3D *e, int step) {
     int txIndex = threadIdx.x;
     int txStep = blockDim.x;
     int tyIndex = blockIdx.x * blockDim.y + threadIdx.y;
     int tyStep = gridDim.x * blockDim.y;
-    e->makeStep(step, txIndex, tyIndex, txStep, tyStep);
+    int tzIndex = blockIdx.y * blockDim.z + threadIdx.z;
+    int tzStep = gridDim.y * blockDim.z;
+    e->makeStep(step, txIndex, tyIndex, tzIndex, txStep, tyStep, tzStep);
 }
 
-
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     char dataDir[] = "data/flow";
     const int k = 4;
     const int step = 100 * k;
+    const int epochCount = 100 * k;
 
     int vRadius = 10;
     // Занимаемая память пропорциональна k^2 * vRadius^3
     double vMax = 4.80;
     double tStep = 1e-1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
 
-    int height = 25 * k, length = 100 * k;
+    int height = 25 * k, length = 100 * k, width = 15 * k;
     int wallY = 7 * k, screenY = 7 * k;
     int wallLeftX = 25 * k, wallRightX = wallLeftX + 2;
     int screenLeftX = 25 * k, screenRightX = screenLeftX + 2;
+    int holeCenterY = 10 * k, holeCenterZ = 6 * k, holeRadius = 3 * k;
 
     printf("Выделение памяти.\n");
 
-    IndexTankWithScreen2D* geometry;
-    auto tempGeometry = IndexTankWithScreen2D(wallLeftX, wallRightX, wallY, height, screenLeftX, screenRightX, screenY, length);
+    IndexTankWithScreen2D *geometry;
+    auto tempGeometry =
+        IndexTankWithScreen2D(wallLeftX, wallRightX, wallY, height, screenLeftX, screenRightX, screenY, length);
     cudaCopy(&geometry, &tempGeometry);
 
-    Grid3D* grid;
+    Grid3D *grid;
     auto tempGrid = Grid3D({xStep, xStep, xStep}, {vStep, vStep, vStep}, vMax);
     cudaCopy(&grid, &tempGrid);
 
-//    State3D* state;
-//    auto tempState = State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
-//    cudaCopy(&state, &tempState);
-//    state->cudaAllocate();
+    //    State3D* state;
+    //    auto tempState = State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
+    //    cudaCopy(&state, &tempState);
+    //    state->cudaAllocate();
 
-    auto state = new State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
+    auto state = new State3D({length, height, width}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
     state->allocate();
 
     setInitialValues(state, grid, geometry);
 
-    DoduladCI* ci;
+    DoduladCI *ci;
     auto tempCi = DoduladCI(tStep, vStep, vRadius, state);
     cudaCopy(&ci, &tempCi);
 
-    Evolution3D* evolution;
+    Evolution3D *evolution;
     auto tempEvolution = Evolution3D(tStep, state, grid, geometry, ci);
     cudaCopy(&evolution, &tempEvolution);
 
@@ -99,9 +102,9 @@ int main(int argc, char* argv[]) {
     cudaMemGetInfo(&available, &total);
     printf("Занято видеопамяти: %zu Мб / %zu Мб\n", (total - available) / 1024 / 1024, total / 1024 / 1024);
     printf("Начинаем обсчет.\n");
-    for (int i = 0; i < 200 * k; i++) {
+    for (int i = 0; i < epochCount; i++) {
         ci->generateGrid();
-        evolve<<<dim3(8, 1, 1), dim3(256, 1, 1)>>>(evolution, i);
+        evolve<<<dim3(32, 8, 1), dim3(128, 1, 1)>>>(evolution, i);
         auto errorCode = cudaGetLastError();
         if (errorCode != 0) {
             std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
@@ -136,16 +139,16 @@ int main(int argc, char* argv[]) {
             file.open(filename);
             storage->exportMachNumber(&file, 0);
             file.close();
-//
-//            sprintf(filename, "data/flow/temperature_xx_%03d.out", i);
-//            file.open(filename);
-//            storage->exportTemperatureTensor(&file, {0, 0});
-//            file.close();
-//
-//            sprintf(filename, "data/flow/temperature_yy_%03d.out", i);
-//            file.open(filename);
-//            storage->exportTemperatureTensor(&file, {1, 1});
-//            file.close();
+
+            // sprintf(filename, "data/flow/temperature_xx_%03d.out", i);
+            // file.open(filename);
+            // storage->exportTemperatureTensor(&file, {0, 0});
+            // file.close();
+            //
+            // sprintf(filename, "data/flow/temperature_yy_%03d.out", i);
+            // file.open(filename);
+            // storage->exportTemperatureTensor(&file, {1, 1});
+            // file.close();
 
             sprintf(filename, "%s/flow.out", dataDir);
             file.open(filename, std::ofstream::app);
