@@ -23,16 +23,20 @@ public:
     void exportAll(std::ostream* stream) {
         for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
             for (int yIndex = 0; yIndex < state->yIndexMax; yIndex ++) {
-                auto density = this->getDensity(xIndex, yIndex);
-                auto temperature = this->getTemperature({xIndex, yIndex});
-                auto velocity = this->getVelocity({xIndex, yIndex});
-                (*stream)
-                        << grid->getXx(xIndex) << "\t"
-                        << grid->getXy(yIndex) << "\t"
-                        << density << "\t"
-                        << temperature << "\t"
-                        << velocity[0] << "\t" << velocity[1] << "\t"
-                        << std::endl;
+                for (int zIndex = 0; zIndex < state->yIndexMax; zIndex++) {
+                    auto density = this->getDensity(xIndex, yIndex, zIndex);
+                    auto temperature = this->getTemperature({xIndex, yIndex, zIndex});
+                    auto velocity = this->getVelocity({xIndex, yIndex, zIndex});
+                    (*stream)
+                            << grid->getXx(xIndex) << "\t"
+                            << grid->getXy(yIndex) << "\t"
+                            << grid->getXz(zIndex) << "\t"
+                            << density << "\t"
+                            << temperature << "\t"
+                            << velocity[0] << "\t" << velocity[1] << "\t" << velocity[2] << "\t"<< "\t"
+                            << std::endl;
+                }
+                (*stream) << std::endl;
             }
             (*stream) << std::endl;
         }
@@ -44,7 +48,7 @@ public:
                 (*stream)
                         << grid->getXx(xIndex) << "\t"
                         << grid->getXy(yIndex) << "\t"
-                        << this->getDensity(xIndex, yIndex) << "\n";
+                        << this->getDensity(xIndex, yIndex, 0) << "\n";
             }
             (*stream) << std::endl;
         }
@@ -123,12 +127,12 @@ public:
         const double k = 0.5;
 
         for (int xIndex = 0; xIndex < state->xIndexMax; xIndex ++) {
-            const double axisValue = this->getDensity(xIndex, 0);
+            const double axisValue = this->getDensity(xIndex, 0, 0);
             bool radiusFound = false;
             for (int yIndex = 1; yIndex < state->yIndexMax; yIndex ++) {
-                auto value = this->getDensity(xIndex, yIndex);
+                auto value = this->getDensity(xIndex, yIndex, 0);
                 if (value < axisValue * k) {
-                    auto prevValue = this->getDensity(xIndex, yIndex - 1);
+                    auto prevValue = this->getDensity(xIndex, yIndex - 1, 0);
                     (*stream) << grid->getXx(xIndex) << "\t"
                               << grid->getXy(yIndex) - (axisValue * k - value) * grid->yStep / (prevValue - value) << "\n";
                     radiusFound = true;
@@ -150,13 +154,13 @@ public:
     }
 
 
-    double getDensity(int xIndex, int yIndex) {
+    double getDensity(int xIndex, int yIndex, int zIndex) {
         double value = 0;
         doubleVector v;
         for (const auto& vIndex : state->getVelocityIterable()) {
             v = grid->getV(vIndex);
             if (grid->inBounds(v)) {
-                value += state->getValue({xIndex, yIndex, 0}, vIndex);
+                value += state->getValue({xIndex, yIndex, zIndex}, vIndex);
             }
         }
         return value;

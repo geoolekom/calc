@@ -70,12 +70,12 @@ __device__ double Evolution3D::schemeChange(const intVector &xIndex, int vxIndex
            - gammaY * (limitValue(gammaY, {0, 1, 0}, xIndex + intVector({0, 1, 0}), vIndex) - limitValue(gammaY, {0, 1, 0}, xIndex, vIndex));
 };
 
-__device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int txStep, int tyStep) {
+__device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tzIndex, int txStep, int tyStep, int tzStep) {
     double h, value, gamma;
     intVector xIndex, vIndex, direction;
     doubleVector v;
 
-    for (int xzIndex = 0; xzIndex < prev->zIndexMax; xzIndex += 1) {
+    for (int xzIndex = tzIndex; xzIndex < prev->zIndexMax; xzIndex += tzStep) {
         for (int xyIndex = tyIndex; xyIndex < prev->yIndexMax; xyIndex += tyStep) {
             for (int xxIndex = txIndex; xxIndex < prev->xIndexMax; xxIndex += txStep) {
                 xIndex = {xxIndex, xyIndex, xzIndex};
