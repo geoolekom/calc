@@ -13,8 +13,9 @@
 #include "Evolution3D.h"
 #include "Storage2D.h"
 #include "DoduladCI.h"
+#include "RoundHoleTank.cuh"
 
-void setInitialValues(State3D* state, Grid3D* grid, IndexTankWithScreen2D* geometry) {
+void setInitialValues(State3D* state, Grid3D* grid, Geometry3D* geometry) {
     double denom = 0, value;
     doubleVector v;
 
@@ -43,30 +44,46 @@ __global__ void evolve(Evolution3D* e, int step) {
     int txStep = blockDim.x;
     int tyIndex = blockIdx.x * blockDim.y + threadIdx.y;
     int tyStep = gridDim.x * blockDim.y;
-    e->makeStep(step, txIndex, tyIndex, txStep, tyStep);
+    int tzIndex = blockIdx.y * blockDim.z + threadIdx.z;
+    int tzStep = gridDim.y * blockDim.z;
+//    printf("Index: (%d %d), (%d %d), (%d %d)\n", txIndex, txStep, tyIndex, tyStep, tzIndex, tzStep);
+    e->makeStep(step, txIndex, tyIndex, tzIndex, txStep, tyStep, tzStep);
+}
+
+__global__ void initialize(Geometry3D** geometry, int k) {
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        int height = 25 * k, length = 100 * k, width = 8;
+        int wallY = 7 * k, screenY = 7 * k;
+        int wallLeftX = 25 * k, wallRightX = wallLeftX + 2;
+        int screenLeftX = 25 * k, screenRightX = screenLeftX + 2;
+        *geometry = new IndexTankWithScreen2D(wallLeftX, wallRightX, wallY, height, screenLeftX, screenRightX, screenY, length);
+    }
 }
 
 
 int main(int argc, char* argv[]) {
-    char dataDir[] = "data/flow";
-    const int k = 4;
-    const int step = 100 * k;
+    char dataDir[] = "data/10.02.2021/1/flow/";
+    const int k = 1;
+    const int step = 10 * k;
+    const int epochCount = 500;
 
-    int vRadius = 10;
+    int vRadius = 5;
     // Занимаемая память пропорциональна k^2 * vRadius^3
     double vMax = 4.80;
     double tStep = 1e-1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
 
-    int height = 25 * k, length = 100 * k;
-    int wallY = 7 * k, screenY = 7 * k;
-    int wallLeftX = 25 * k, wallRightX = wallLeftX + 2;
-    int screenLeftX = 25 * k, screenRightX = screenLeftX + 2;
+    int height = 25 * k, length = 100 * k, width = 8;
+
 
     printf("Выделение памяти.\n");
 
-    IndexTankWithScreen2D* geometry;
-    auto tempGeometry = IndexTankWithScreen2D(wallLeftX, wallRightX, wallY, height, screenLeftX, screenRightX, screenY, length);
-    cudaCopy(&geometry, &tempGeometry);
+//    RoundHoleTank* geometry;
+//    auto tempGeometry = RoundHoleTank()
+
+    Geometry3D* geometry;
+    cudaMallocManaged(&geometry, sizeof(Geometry3D), cudaMemAttachGlobal);
+    initialize<<<1, 1>>>(&geometry, k);
+    printf("Geometry\n");
 
     Grid3D* grid;
     auto tempGrid = Grid3D({xStep, xStep, xStep}, {vStep, vStep, vStep}, vMax);
@@ -77,7 +94,7 @@ int main(int argc, char* argv[]) {
 //    cudaCopy(&state, &tempState);
 //    state->cudaAllocate();
 
-    auto state = new State3D({length, height, 1}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
+    auto state = new State3D({length, height, width}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
     state->allocate();
 
     setInitialValues(state, grid, geometry);

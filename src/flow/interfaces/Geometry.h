@@ -10,17 +10,14 @@
 
 class Geometry3D {
 public:
-
     Geometry3D() = default;
     ~Geometry3D() = default;
 
-    virtual __host__ __device__ bool isInTank(const intVector& xIndex) { return false; };
-
-    virtual __device__ bool isDiffuseReflection(const intVector& xIndex, const doubleVector& v) { printf("VIRTUAL\n"); return false; };
-
-    virtual __device__ bool isMirrorReflection(const intVector& xIndex, const doubleVector& v) { return false; };
-
-    virtual __device__ bool isBorderReached(const intVector& xIndex, const doubleVector& v) { return true; };
+    __device__ virtual bool isDiffuseReflection(const intVector& xIndex, const doubleVector& v) const = 0;
+    __device__ virtual bool isMirrorReflection(const intVector& xIndex, const doubleVector& v) const = 0;
+    __device__ virtual bool isBorderReached(const intVector& xIndex, const doubleVector& v) const = 0;
+    __device__ virtual bool isFreeFlow(const intVector& x, const doubleVector& v) const = 0;
+    __host__ __device__ virtual bool isInTank(const intVector& xIndex) const = 0;
 };
 
 

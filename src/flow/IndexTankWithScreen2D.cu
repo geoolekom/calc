@@ -10,21 +10,20 @@
 #define CALC_INDEXTANKWITHSCREEN2D_H
 
 
-class IndexTankWithScreen2D {
+class IndexTankWithScreen2D : public Geometry3D {
 private:
     int wallLeftX, wallRightX, wallY;  // Правая стенка ящика
     int ceilingY;  // Верхняя стенка
     int screenLeftX, screenRightX, screenY;  // Экран
     int endX;  // Правая граница области счета
 public:
-
-    IndexTankWithScreen2D(int wallLeftX, int wallRightX, int wallY, int ceilingY, int screenLeftX,
+    __device__ IndexTankWithScreen2D(int wallLeftX, int wallRightX, int wallY, int ceilingY, int screenLeftX,
                      int screenRightX, int screenY, int endX) :
             wallLeftX (wallLeftX), wallRightX (wallRightX), wallY (wallY),
             ceilingY (ceilingY), screenLeftX (screenLeftX), screenRightX (screenRightX), screenY (screenY),
             endX (endX) {};
 
-    __device__ bool isDiffuseReflection(const intVector& x, const doubleVector& v) {
+    __device__ bool isDiffuseReflection(const intVector& x, const doubleVector& v) const override {
         bool value = false;
         if ((x[0] == 0) ||
             (x[0] == wallLeftX && x[1] >= wallY) ||
@@ -55,20 +54,20 @@ public:
         return value;
     }
 
-    __device__ bool isMirrorReflection(const intVector& x, const doubleVector& v) {
+    __device__ bool isMirrorReflection(const intVector& x, const doubleVector& v) const override {
         return x[1] == 0 && v[1] > 0;
     }
 
-    __device__ bool isBorderReached(const intVector& x, const doubleVector& v) {
+    __device__ bool isBorderReached(const intVector& x, const doubleVector& v) const override {
         return (((x[0] >= wallRightX && x[0] < screenLeftX) || x[0] >= screenRightX) && x[1] == ceilingY - 1 && v[1] < 0) ||
                 (x[0] == endX - 1 && v[0] < 0);
     }
 
-    __device__ bool isFreeFlow(const intVector& x, const doubleVector& v) {
+    __device__ bool isFreeFlow(const intVector& x, const doubleVector& v) const override {
         return !(this->isDiffuseReflection(x, v) || this->isMirrorReflection(x, v) || this->isBorderReached(x, v));
     }
 
-    __host__ __device__ bool isInTank(const intVector& x) {
+    __host__ __device__ bool isInTank(const intVector& x) const override {
         return x[0] < wallLeftX;
     }
 };

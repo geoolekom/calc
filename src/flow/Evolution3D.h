@@ -15,7 +15,7 @@ class Evolution3D {
 private:
     double tStep;
 
-    IndexTankWithScreen2D* geometry;
+    Geometry3D* geometry;
     Grid3D* grid;
     DoduladCI* ci;
 
@@ -26,7 +26,7 @@ private:
     floatType* currData;
     floatType* prevData;
 public:
-    Evolution3D(double tStep, State3D* state, Grid3D* grid, IndexTankWithScreen2D* geometry, DoduladCI* ci);
+    Evolution3D(double tStep, State3D* state, Grid3D* grid, Geometry3D* geometry, DoduladCI* ci);
     ~Evolution3D();
 
     State3D* getState() const;
