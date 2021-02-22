@@ -27,7 +27,7 @@ __device__ bool RoundHoleTank::isDiffuseReflection(const intVector &x, const dou
         // влево
         value = value || v[0] < 0;
     }
-    if (x[0] < wallRightX && x[1] == ceilingY - 1) {
+    if (x[1] == ceilingY - 1 && x[0] < wallRightX) {
         // вниз
         value = value || v[1] < 0;
     }

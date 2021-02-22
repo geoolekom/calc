@@ -9,12 +9,13 @@
 #include "DoduladCI.h"
 #include "Evolution3D.h"
 #include "Grid3D.h"
+#include "RoundHoleTank.cuh"
 #include "State3D.h"
 #include "Storage2D.h"
 #include "interfaces/Geometry.h"
 #include "utils/cuda.h"
 
-void setInitialValues(State3D *state, Grid3D *grid, IndexTankWithScreen2D *geometry) {
+void setInitialValues(State3D *state, Grid3D *grid, RoundHoleTank *geometry) {
     double denom = 0, value;
     doubleVector v;
 
@@ -49,12 +50,12 @@ __global__ void evolve(Evolution3D *e, int step) {
 
 int main(int argc, char *argv[]) {
     char dataDir[] = "data/flow";
-    const int k = 4;
-    const int step = 100 * k;
-    const int epochCount = 100 * k;
+    const int k = 1;
+    const int step = 10 * k;
+    const int epochCount = 2000 * k;
 
-    int vRadius = 10;
-    // Занимаемая память пропорциональна k^2 * vRadius^3
+    int vRadius = 5;
+    // Занимаемая память пропорциональна k^3 * vRadius^3
     double vMax = 4.80;
     double tStep = 1e-1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
 
@@ -66,9 +67,10 @@ int main(int argc, char *argv[]) {
 
     printf("Выделение памяти.\n");
 
-    IndexTankWithScreen2D *geometry;
+    RoundHoleTank *geometry;
+    // IndexTankWithScreen2D *geometry;
     auto tempGeometry =
-        IndexTankWithScreen2D(wallLeftX, wallRightX, wallY, height, screenLeftX, screenRightX, screenY, length);
+        RoundHoleTank(holeCenterY, holeCenterZ, holeRadius, wallLeftX, wallRightX, height, width, length);
     cudaCopy(&geometry, &tempGeometry);
 
     Grid3D *grid;
@@ -104,7 +106,7 @@ int main(int argc, char *argv[]) {
     printf("Начинаем обсчет.\n");
     for (int i = 0; i < epochCount; i++) {
         ci->generateGrid();
-        evolve<<<dim3(32, 8, 1), dim3(128, 1, 1)>>>(evolution, i);
+        evolve<<<dim3(32, 32, 1), dim3(128, 1, 1)>>>(evolution, i);
         auto errorCode = cudaGetLastError();
         if (errorCode != 0) {
             std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
