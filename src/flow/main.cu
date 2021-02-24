@@ -105,20 +105,22 @@ int main(int argc, char *argv[]) {
     printf("Занято видеопамяти: %zu Мб / %zu Мб\n", (total - available) / 1024 / 1024, total / 1024 / 1024);
     printf("Начинаем обсчет.\n");
     for (int i = 0; i < epochCount; i++) {
-        ci->generateGrid();
-        evolve<<<dim3(32, 32, 1), dim3(128, 1, 1)>>>(evolution, i);
-        auto errorCode = cudaGetLastError();
-        if (errorCode != 0) {
-            std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
-            break;
+        for (int j = 0; j < 3; j++) {
+            ci->generateGrid();
+            evolve<<<dim3(32, 32, 1), dim3(128, 1, 1)>>>(evolution, j);
+            auto errorCode = cudaGetLastError();
+            if (errorCode != 0) {
+                std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
+                break;
+            }
+            ci->finalizeGrid();
+            errorCode = cudaDeviceSynchronize();
+            if (errorCode != 0) {
+                std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
+                break;
+            }
+            evolution->swap();
         }
-        ci->finalizeGrid();
-        errorCode = cudaDeviceSynchronize();
-        if (errorCode != 0) {
-            std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
-            break;
-        }
-        evolution->swap();
 
         auto duration = std::time(nullptr) - startTime;
         printf("%02zu:%02zu\tШаг %d\n", duration / 60, duration % 60, i);
