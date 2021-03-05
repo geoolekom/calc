@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
             evolve<<<dim3(32, 32, 1), dim3(128, 1, 1)>>>(evolution, j);
             auto errorCode = cudaGetLastError();
             if (errorCode != 0) {
-                std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
+                std::cout << "Ошибка cudaGetLastError: " << cudaGetErrorString(errorCode) << std::endl;
                 break;
             }
             ci->finalizeGrid();
             errorCode = cudaDeviceSynchronize();
             if (errorCode != 0) {
-                std::cout << "Ошибка: " << cudaGetErrorString(errorCode) << std::endl;
+                std::cout << "Ошибка cudaDeviceSynchronize: " << cudaGetErrorString(errorCode) << std::endl;
                 break;
             }
             evolution->swap();

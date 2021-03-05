@@ -10,18 +10,36 @@ RoundHoleTank::RoundHoleTank(int holeCenterY, int holeCenterZ, int holeRadius, i
       wallRightX(wallRightX), ceilingY(ceilingY), ceilingZ(ceilingZ), endX(endX){};
 
 __device__ bool RoundHoleTank::inHoleNeighbourhood(const intVector &x) const {
-    const int distanceSqr = (x[1] - holeCenterY) * (x[1] - holeCenterY) + (x[2] - holeCenterZ) * (x[2] - holeCenterZ);
+    const double shift = 0.5;
+    const double distanceSqr = (x[1] + shift - holeCenterY) * (x[1] + shift - holeCenterY) +
+                               (x[2] + shift - holeCenterZ) * (x[2] + shift - holeCenterZ);
     return distanceSqr < holeRadius * holeRadius;
 }
 
 __device__ bool RoundHoleTank::isDiffuseReflection(const intVector &x, const doubleVector &v) const {
-    // Тут нарочно не рассматриваем отражение от боковой грани отверстия
     bool value = false;
     const bool isInHoleNeighbourhood = this->inHoleNeighbourhood(x);
+    const intVector shiftY = {0, 1, 0}, shiftZ = {0, 0, 1};
+    if (wallLeftX - 1 < x[0] && x[0] < wallRightX && isInHoleNeighbourhood) {
+        // На краю отверстия. Y - по вертикали, Z - по горизонтали.
+        const bool wallByLeft = !this->inHoleNeighbourhood(x - shiftZ) && v[2] > 0,
+                   wallByRight = !this->inHoleNeighbourhood(x + shiftZ) && v[2] < 0,
+                   wallByBottom = !this->inHoleNeighbourhood(x - shiftY) && v[1] > 0,
+                   wallByTop = !this->inHoleNeighbourhood(x + shiftY) && v[1] < 0;
+        value = wallByLeft || wallByRight || wallByBottom || wallByTop;
+    }
+    if (wallLeftX - 1 < x[0] && x[0] < wallRightX && !isInHoleNeighbourhood) {
+        // Внутри стенки
+        const bool wallByLeft = this->inHoleNeighbourhood(x + shiftZ) && v[2] < 0,
+                   wallByRight = this->inHoleNeighbourhood(x - shiftZ) && v[2] > 0,
+                   wallByBottom = this->inHoleNeighbourhood(x + shiftY) && v[1] < 0,
+                   wallByTop = this->inHoleNeighbourhood(x - shiftY) && v[1] > 0;
+        value = value || wallByLeft || wallByRight || wallByBottom || wallByTop;
+    }
     if ((x[0] == 0) || (x[0] == wallLeftX && !isInHoleNeighbourhood) ||
         (x[0] == wallRightX && !isInHoleNeighbourhood)) {
         // летящие вправо имеют рассеянное распределение
-        value = v[0] > 0;
+        value = value || v[0] > 0;
     };
     if ((x[0] == wallLeftX - 1 && !isInHoleNeighbourhood) || (x[0] == wallRightX - 1 && !isInHoleNeighbourhood)) {
         // влево
