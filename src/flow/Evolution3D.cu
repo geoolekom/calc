@@ -41,7 +41,9 @@ __device__ double Evolution3D::limiter(double theta) {
 
 __device__ double Evolution3D::limitValue(double gamma, const intVector &direction, const intVector &xIndex,
                                           const intVector &vIndex) {
-    double value, thetaNom, result;
+    double value;
+    double thetaNom;
+    double result;
     double thetaDenom = prev->getValue(xIndex, vIndex) - prev->getValue(xIndex - direction, vIndex);
     if (gamma > 0) {
         thetaNom = prev->getValue(xIndex - direction, vIndex) - prev->getValue(xIndex - 2 * direction, vIndex);
@@ -69,10 +71,18 @@ __device__ double Evolution3D::schemeChange(const intVector &xIndex, int vxIndex
 
 __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tzIndex, int txStep, int tyStep,
                                       int tzStep) {
-    double h, value, gamma, directionStep;
-    bool isMirrored, isBorder;
-    intVector xIndex, vIndex, direction;
-    doubleVector v, doubleDirection;
+    double h;
+    double value;
+    double gamma;
+    double directionStep;
+    bool isMirrored;
+    bool isBorder;
+    intVector xIndex;
+    intVector vIndex;
+    intVector direction;
+    doubleVector v;
+    doubleVector doubleDirection;
+    doubleVector diffusionNormal;
 
     if (step % 3 == 0) {
         direction = {1, 0, 0};
@@ -115,10 +125,11 @@ __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tz
                     }
                 }
 
+                diffusionNormal = geometry->getDiffusionNormal(xIndex);
                 if (geometry->isDiffuseReflection(xIndex, doubleDirection)) {
-                    h = this->calculateDiffusionFactor(xIndex, direction);
+                    h = this->calculateDiffusionFactor(xIndex, direction, diffusionNormal);
                 } else if (geometry->isDiffuseReflection(xIndex, -1 * doubleDirection)) {
-                    h = this->calculateDiffusionFactor(xIndex, -1 * direction);
+                    h = this->calculateDiffusionFactor(xIndex, -1 * direction, diffusionNormal);
                 } else {
                     h = 0;
                 }
@@ -163,8 +174,11 @@ __device__ void Evolution3D::makeStep(int step, int txIndex, int tyIndex, int tz
     }
 }
 
-__device__ double Evolution3D::calculateDiffusionFactor(const intVector &xIndex, const intVector &direction) {
-    double denom = 0, nom = 0, multiplier;
+__device__ double Evolution3D::calculateDiffusionFactor(const intVector &xIndex, const intVector &direction,
+                                                        const doubleVector &normal) {
+    double denom = 0;
+    double nom = 0;
+    double multiplier;
     doubleVector v;
     intVector vIndex;
 
@@ -174,7 +188,7 @@ __device__ double Evolution3D::calculateDiffusionFactor(const intVector &xIndex,
                 vIndex = {vxIndex, vyIndex, vzIndex};
                 if (grid->inBounds(vIndex)) {
                     v = grid->getV(vIndex);
-                    multiplier = v * direction;
+                    multiplier = v * normal;
                     if (multiplier > 0) {
                         denom += multiplier * exp(-(v * v) / 2);
                     } else if (multiplier < 0) {

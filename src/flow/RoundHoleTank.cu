@@ -19,23 +19,20 @@ __device__ bool RoundHoleTank::inHoleNeighbourhood(const intVector &x) const {
 __device__ bool RoundHoleTank::isDiffuseReflection(const intVector &x, const doubleVector &v) const {
     bool value = false;
     const bool isInHoleNeighbourhood = this->inHoleNeighbourhood(x);
+    auto normal = this->getDiffusionNormal(x);
     const intVector shiftY = {0, 1, 0};
     const intVector shiftZ = {0, 0, 1};
     if (wallLeftX - 1 < x[0] && x[0] < wallRightX && isInHoleNeighbourhood) {
         // На краю отверстия. Y - по вертикали, Z - по горизонтали.
-        const bool wallByLeft = !this->inHoleNeighbourhood(x - shiftZ) && v[2] > 0;
-        const bool wallByRight = !this->inHoleNeighbourhood(x + shiftZ) && v[2] < 0;
-        const bool wallByBottom = !this->inHoleNeighbourhood(x - shiftY) && v[1] > 0;
-        const bool wallByTop = !this->inHoleNeighbourhood(x + shiftY) && v[1] < 0;
-        value = wallByLeft || wallByRight || wallByBottom || wallByTop;
+        auto isInternal = this->inHoleNeighbourhood(x - shiftZ) && this->inHoleNeighbourhood(x + shiftZ) &&
+                          this->inHoleNeighbourhood(x - shiftY) && this->inHoleNeighbourhood(x + shiftY);
+        value = normal * v > 0 && !isInternal;
     }
     if (wallLeftX - 1 < x[0] && x[0] < wallRightX && !isInHoleNeighbourhood) {
         // Внутри стенки
-        const bool wallByLeft = this->inHoleNeighbourhood(x + shiftZ) && v[2] < 0;
-        const bool wallByRight = this->inHoleNeighbourhood(x - shiftZ) && v[2] > 0;
-        const bool wallByBottom = this->inHoleNeighbourhood(x + shiftY) && v[1] < 0;
-        const bool wallByTop = this->inHoleNeighbourhood(x - shiftY) && v[1] > 0;
-        value = value || wallByLeft || wallByRight || wallByBottom || wallByTop;
+        auto hasInternalNeighbour = this->inHoleNeighbourhood(x - shiftZ) || this->inHoleNeighbourhood(x + shiftZ) ||
+                                    this->inHoleNeighbourhood(x - shiftY) || this->inHoleNeighbourhood(x + shiftY);
+        value = value || (normal * v > 0 && hasInternalNeighbour);
     }
     if ((x[0] == 0) || (x[0] == wallLeftX && !isInHoleNeighbourhood) ||
         (x[0] == wallRightX && !isInHoleNeighbourhood)) {
@@ -69,9 +66,34 @@ __device__ bool RoundHoleTank::isDiffuseReflection(const intVector &x, const dou
 __device__ bool RoundHoleTank::isMirrorReflection(const intVector &x, const doubleVector &v) const { return false; }
 
 __device__ bool RoundHoleTank::isBorderReached(const intVector &x, const doubleVector &v) const {
-    return (x[0] >= wallRightX && x[1] == ceilingY - 1 && v[1] < 0) || (x[0] >= wallRightX && x[1] == 0 && v[1] > 0) ||
-           (x[0] >= wallRightX && x[2] == ceilingZ - 1 && v[2] < 0) || (x[0] >= wallRightX && x[2] == 0 && v[2] > 0) ||
-           (x[0] == endX - 1 && v[0] < 0);
+    bool value = false;
+    const intVector shiftY = {0, 1, 0};
+    const intVector shiftZ = {0, 0, 1};
+    const bool isInHoleNeighbourhood = this->inHoleNeighbourhood(x);
+    auto normal = this->getDiffusionNormal(x);
+    if (wallLeftX - 1 < x[0] && x[0] < wallRightX && isInHoleNeighbourhood) {
+        // На краю отверстия. Y - по вертикали, Z - по горизонтали.
+        const bool wallByLeft = !this->inHoleNeighbourhood(x - shiftZ) && v[2] > 0;
+        const bool wallByRight = !this->inHoleNeighbourhood(x + shiftZ) && v[2] < 0;
+        const bool wallByBottom = !this->inHoleNeighbourhood(x - shiftY) && v[1] > 0;
+        const bool wallByTop = !this->inHoleNeighbourhood(x + shiftY) && v[1] < 0;
+        auto isBorder = (wallByLeft || wallByRight || wallByBottom || wallByTop) && normal * v < 0;
+        value = isBorder;
+    }
+
+    if (wallLeftX - 1 < x[0] && x[0] < wallRightX && !isInHoleNeighbourhood) {
+        // Внутри стенки
+        const bool wallByLeft = this->inHoleNeighbourhood(x + shiftZ) && v[2] < 0;
+        const bool wallByRight = this->inHoleNeighbourhood(x - shiftZ) && v[2] > 0;
+        const bool wallByBottom = this->inHoleNeighbourhood(x + shiftY) && v[1] < 0;
+        const bool wallByTop = this->inHoleNeighbourhood(x - shiftY) && v[1] > 0;
+        auto isBorder = (wallByLeft || wallByRight || wallByBottom || wallByTop) && normal * v < 0;
+        value = value || isBorder;
+    }
+
+    return value || (x[0] >= wallRightX && x[1] == ceilingY - 1 && v[1] < 0) ||
+           (x[0] >= wallRightX && x[1] == 0 && v[1] > 0) || (x[0] >= wallRightX && x[2] == ceilingZ - 1 && v[2] < 0) ||
+           (x[0] >= wallRightX && x[2] == 0 && v[2] > 0) || (x[0] == endX - 1 && v[0] < 0) || (x[0] == 0 && v[0] > 0);
 }
 
 __device__ bool RoundHoleTank::isFreeFlow(const intVector &x, const doubleVector &v) const {
@@ -85,4 +107,16 @@ void RoundHoleTank::serializeParams(char *outputString) const {
                        "ceilingZ %d, endX %d";
     sprintf(outputString, format, holeCenterY, holeCenterZ, holeRadius, wallLeftX, wallRightX, ceilingY, ceilingZ,
             endX);
+}
+
+__device__ doubleVector RoundHoleTank::getDiffusionNormal(const intVector &x) const {
+    const double shift = 0.5;
+    auto yDistance = x[1] + shift - holeCenterY;
+    auto zDistance = x[2] + shift - holeCenterZ;
+    floatType distance = std::sqrt(yDistance * yDistance + zDistance * zDistance);
+    doubleVector normal = {0, yDistance / distance, zDistance / distance};
+    if (this->inHoleNeighbourhood(x)) {
+        return normal;
+    }
+    return -1 * normal;
 }

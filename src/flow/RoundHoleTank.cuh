@@ -26,6 +26,7 @@ class RoundHoleTank {
     __device__ bool isFreeFlow(const intVector &x, const doubleVector &v) const;
     __host__ __device__ bool isInTank(const intVector &x) const;
 
+    __device__ doubleVector getDiffusionNormal(const intVector &x) const;
     __device__ bool inHoleNeighbourhood(const intVector &x) const;
     void serializeParams(char *outputString) const;
 };
