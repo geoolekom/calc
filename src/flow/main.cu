@@ -105,6 +105,14 @@ int main(int argc, char *argv[]) {
     char filename[100];
     const auto startTime = std::time(nullptr);
 
+    // Сохраняем параметры запуска
+    char paramsString[200];
+    tempGeometry.serializeParams(paramsString);
+    sprintf(filename, "%s/params.txt", dataDir);
+    file.open(filename);
+    file << paramsString;
+    file.close();
+
     size_t available;
     size_t total;
     cudaMemGetInfo(&available, &total);

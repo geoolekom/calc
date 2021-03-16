@@ -27,6 +27,7 @@ class RoundHoleTank {
     __host__ __device__ bool isInTank(const intVector &x) const;
 
     __device__ bool inHoleNeighbourhood(const intVector &x) const;
+    void serializeParams(char *outputString) const;
 };
 
 #endif // CALC_ROUNDHOLETANK_CUH
