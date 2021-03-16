@@ -11,6 +11,8 @@
 #include "State3D.h"
 #include <cuda_runtime_api.h>
 
+typedef RoundHoleTank GeometryInterface;
+
 class Evolution3D {
   private:
     double tStep;
@@ -27,7 +29,7 @@ class Evolution3D {
     floatType *prevData;
 
   public:
-    Evolution3D(double tStep, State3D *state, Grid3D *grid, RoundHoleTank *geometry, DoduladCI *ci);
+    Evolution3D(double tStep, State3D *state, Grid3D *grid, GeometryInterface *geometry, DoduladCI *ci);
     ~Evolution3D();
 
     State3D *getState() const;

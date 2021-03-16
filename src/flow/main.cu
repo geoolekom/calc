@@ -9,14 +9,14 @@
 #include "DoduladCI.h"
 #include "Evolution3D.h"
 #include "Grid3D.h"
-#include "RoundHoleTank.cuh"
 #include "State3D.h"
 #include "Storage2D.h"
 #include "interfaces/Geometry.h"
 #include "utils/cuda.h"
 
-void setInitialValues(State3D *state, Grid3D *grid, RoundHoleTank *geometry) {
-    double denom = 0, value;
+void setInitialValues(State3D *state, Grid3D *grid, GeometryInterface *geometry) {
+    double denom = 0;
+    double value;
     doubleVector v;
 
     for (const auto &vIndex : state->getVelocityIterable()) {
@@ -39,12 +39,12 @@ void setInitialValues(State3D *state, Grid3D *grid, RoundHoleTank *geometry) {
 }
 
 __global__ void evolve(Evolution3D *e, int step) {
-    int txIndex = threadIdx.x;
-    int txStep = blockDim.x;
-    int tyIndex = blockIdx.x * blockDim.y + threadIdx.y;
-    int tyStep = gridDim.x * blockDim.y;
-    int tzIndex = blockIdx.y * blockDim.z + threadIdx.z;
-    int tzStep = gridDim.y * blockDim.z;
+    int txIndex = (int)threadIdx.x;                             // NOLINT(readability-static-accessed-through-instance)
+    int txStep = (int)blockDim.x;                               // NOLINT(readability-static-accessed-through-instance)
+    int tyIndex = (int)(blockIdx.x * blockDim.y + threadIdx.y); // NOLINT(readability-static-accessed-through-instance)
+    int tyStep = (int)(gridDim.x * blockDim.y);                 // NOLINT(readability-static-accessed-through-instance)
+    int tzIndex = (int)(blockIdx.y * blockDim.z + threadIdx.z); // NOLINT(readability-static-accessed-through-instance)
+    int tzStep = (int)(gridDim.y * blockDim.z);                 // NOLINT(readability-static-accessed-through-instance)
     e->makeStep(step, txIndex, tyIndex, tzIndex, txStep, tyStep, tzStep);
 }
 
@@ -52,25 +52,30 @@ int main(int argc, char *argv[]) {
     char dataDir[] = "data/flow";
     const int k = 1;
     const int step = 10 * k;
-    const int epochCount = 2000 * k;
+    const int epochCount = 500 * k;
 
     int vRadius = 5;
     // Занимаемая память пропорциональна k^3 * vRadius^3
     double vMax = 4.80;
-    double tStep = 1e-1 / k, xStep = 1.0 / k, vStep = vMax / vRadius;
+    double tStep = 1e-1 / k;
+    double xStep = 1.0 / k;
+    double vStep = vMax / vRadius;
 
-    int height = 25 * k, length = 100 * k, width = 15 * k;
-    int wallY = 7 * k, screenY = 7 * k;
-    int wallLeftX = 25 * k, wallRightX = wallLeftX + 2;
-    int screenLeftX = 25 * k, screenRightX = screenLeftX + 2;
-    int holeCenterY = 10 * k, holeCenterZ = 6 * k, holeRadius = 3 * k;
+    int height = 25 * k;
+    int length = 100 * k;
+    int width = 25 * k;
+    int wallLeftX = 25 * k;
+    int wallRightX = wallLeftX + 2;
+    int holeCenterY = 6 * k;
+    int holeCenterZ = 6 * k;
+    int holeRadius = 4 * k;
 
     printf("Выделение памяти.\n");
 
-    RoundHoleTank *geometry;
+    GeometryInterface *geometry;
     // IndexTankWithScreen2D *geometry;
     auto tempGeometry =
-        RoundHoleTank(holeCenterY, holeCenterZ, holeRadius, wallLeftX, wallRightX, height, width, length);
+        GeometryInterface(holeCenterY, holeCenterZ, holeRadius, wallLeftX, wallRightX, height, width, length);
     cudaCopy(&geometry, &tempGeometry);
 
     Grid3D *grid;
@@ -82,7 +87,7 @@ int main(int argc, char *argv[]) {
     //    cudaCopy(&state, &tempState);
     //    state->cudaAllocate();
 
-    auto state = new State3D({length, height, width}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
+    auto *state = new State3D({length, height, width}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
     state->allocate();
 
     setInitialValues(state, grid, geometry);
@@ -95,12 +100,13 @@ int main(int argc, char *argv[]) {
     auto tempEvolution = Evolution3D(tStep, state, grid, geometry, ci);
     cudaCopy(&evolution, &tempEvolution);
 
-    auto storage = new Storage2D(state, grid);
+    auto *storage = new Storage2D(state, grid);
     std::ofstream file;
     char filename[100];
     const auto startTime = std::time(nullptr);
 
-    size_t available, total;
+    size_t available;
+    size_t total;
     cudaMemGetInfo(&available, &total);
     printf("Занято видеопамяти: %zu Мб / %zu Мб\n", (total - available) / 1024 / 1024, total / 1024 / 1024);
     printf("Начинаем обсчет.\n");
@@ -153,21 +159,6 @@ int main(int argc, char *argv[]) {
             // file.open(filename);
             // storage->exportTemperatureTensor(&file, {1, 1});
             // file.close();
-
-            sprintf(filename, "%s/flow.out", dataDir);
-            file.open(filename, std::ofstream::app);
-            storage->exportFlowX(&file, i, screenRightX, screenY);
-            file.close();
-
-            sprintf(filename, "%s/function_screen_0_%03d.out", dataDir, i);
-            file.open(filename);
-            storage->exportFunction(&file, screenRightX, 0);
-            file.close();
-
-            sprintf(filename, "%s/function_screen_10_0_%03d.out", dataDir, i);
-            file.open(filename);
-            storage->exportFunction(&file, screenRightX + 10 * k, 0);
-            file.close();
         }
     }
     cudaFree(evolution);

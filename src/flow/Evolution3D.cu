@@ -5,7 +5,7 @@
 #include "Evolution3D.h"
 #include "utils/cuda.h"
 
-Evolution3D::Evolution3D(double tStep, State3D *state, Grid3D *grid, RoundHoleTank *geometry, DoduladCI *ci)
+Evolution3D::Evolution3D(double tStep, State3D *state, Grid3D *grid, GeometryInterface *geometry, DoduladCI *ci)
     : tStep(tStep), grid(grid), geometry(geometry), state(state), ci(ci) {
 
     cudaMallocManaged((void **)&curr, sizeof(State3D), cudaMemAttachGlobal);
