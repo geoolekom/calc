@@ -1,9 +1,11 @@
 #include <cmath>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <cuda_runtime_api.h>
 #include <fstream>
+#include <functional>
 #include <iostream>
 
 #include "DoduladCI.h"
@@ -13,6 +15,9 @@
 #include "Storage2D.hpp"
 #include "interfaces/Geometry.h"
 #include "utils/cuda.h"
+
+std::function<void(int)> shutdownHandler;
+void signalHandler(int signal) { shutdownHandler(signal); }
 
 void setInitialValues(State3D *state, Grid3D *grid, GeometryInterface *geometry) {
     double denom = 0;
@@ -90,19 +95,31 @@ int main(int argc, char *argv[]) {
     auto *state = new State3D({length, height, width}, {-vRadius, -vRadius, -vRadius}, {vRadius, vRadius, vRadius});
     state->allocate();
 
-    setInitialValues(state, grid, geometry);
-
-    DoduladCI *ci;
-    auto tempCi = DoduladCI(tStep, vStep, vRadius, state);
-    cudaCopy(&ci, &tempCi);
-
-    Evolution3D *evolution;
-    auto tempEvolution = Evolution3D(tStep, state, grid, geometry, ci);
-    cudaCopy(&evolution, &tempEvolution);
+    // setInitialValues(state, grid, geometry);
 
     auto *storage = new Storage2D(state, grid);
     std::ofstream file;
     char filename[100];
+
+    // Импортируем данные из файла
+    std::ifstream inputFile;
+    sprintf(filename, "%s/state.in", dataDir);
+    inputFile.open(filename);
+    storage->importState(&inputFile);
+
+    shutdownHandler = [storage, dataDir](int signal) {
+        std::ofstream file;
+        char filename[100];
+        std::cout << "Сохраняем состояние...\n";
+        sprintf(filename, "%s/state.out", dataDir);
+        file.open(filename);
+        storage->exportState(&file);
+        file.close();
+        std::cout << "Завершаем приложение.\n";
+        exit(signal);
+    };
+    std::signal(SIGINT, signalHandler);
+
     const auto startTime = std::time(nullptr);
 
     // Сохраняем параметры запуска
@@ -112,6 +129,14 @@ int main(int argc, char *argv[]) {
     file.open(filename);
     file << paramsString;
     file.close();
+
+    DoduladCI *ci;
+    auto tempCi = DoduladCI(tStep, vStep, vRadius, state);
+    cudaCopy(&ci, &tempCi);
+
+    Evolution3D *evolution;
+    auto tempEvolution = Evolution3D(tStep, state, grid, geometry, ci);
+    cudaCopy(&evolution, &tempEvolution);
 
     size_t available;
     size_t total;
