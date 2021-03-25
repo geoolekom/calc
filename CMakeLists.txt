@@ -51,7 +51,7 @@ target_sources(flow PRIVATE
         src/flow/State3D.h src/flow/State3D.cu
         src/flow/Grid3D.h src/flow/Grid3D.cu
         src/flow/Evolution3D.h src/flow/Evolution3D.cu
-        src/flow/Storage2D.h src/flow/Storage2D.cu
+        src/flow/Storage2D.hpp src/flow/Storage2D.cu
         src/flow/RoundHoleTank.cuh src/flow/RoundHoleTank.cu
         src/flow/tanks/PartialCellTank.cuh src/flow/tanks/PartialCellTank.cu
 

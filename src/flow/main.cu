@@ -10,7 +10,7 @@
 #include "Evolution3D.h"
 #include "Grid3D.h"
 #include "State3D.h"
-#include "Storage2D.h"
+#include "Storage2D.hpp"
 #include "interfaces/Geometry.h"
 #include "utils/cuda.h"
 
